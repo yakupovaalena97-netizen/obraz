@@ -1,0 +1,632 @@
+<!doctype html>
+<html lang="ru">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Obraz — первая версия</title>
+<meta name="description" content="Первая версия прототипа Obraz: оценка фрагментов и подбор выставок.">
+<meta property="og:title" content="Obraz — первая версия">
+<meta property="og:description" content="Первая версия прототипа Obraz: оценка фрагментов и подбор выставок.">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#EDECE7">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230E0E10'/%3E%3Crect x='7' y='9' width='18' height='4' fill='%23F29AC4'/%3E%3Crect x='9' y='15' width='18' height='4' fill='%2321CFC2'/%3E%3Crect x='7' y='21' width='18' height='4' fill='%23EDECE7'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+/* Layout: one column app; header with tabs (Тест · Профиль · Подборка · Вместе); each screen swaps in place */
+:root{
+  --bg:#1A0F22; --ink:#261732; --card:#33223F; --line:#4A3A57; --mute:#A497AE; --text:#E9E6D8; --sage:#AEA989; --sageInk:#1A0F22; --p2:#D59BC0;
+  --f:"Montserrat",system-ui,-apple-system,"Segoe UI",sans-serif;
+  color-scheme:dark;
+}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){
+  --bg:#E9E6D8; --ink:#DDD9C6; --card:#F4F2E9; --line:#C9C3AB; --mute:#6A5C76; --text:#1A0F22; --sage:#4A3A57; --sageInk:#F4F2E9; --p2:#9A3F78; color-scheme:light}}
+:root[data-theme="light"]{--bg:#E9E6D8; --ink:#DDD9C6; --card:#F4F2E9; --line:#C9C3AB; --mute:#6A5C76; --text:#1A0F22; --sage:#4A3A57; --sageInk:#F4F2E9; --p2:#9A3F78; color-scheme:light}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font:15px/1.55 var(--f);margin:0}
+.wrap{max-width:980px;margin:0 auto;padding-inline:20px;padding-block:0 64px}
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line)}
+.hd{max-width:980px;margin:0 auto;padding:12px 20px;display:flex;gap:12px 16px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.logo{font-weight:800;letter-spacing:.32em;font-size:18px;background:none;border:0;color:var(--text);cursor:pointer;padding:0}
+nav{display:flex;gap:6px;flex-wrap:wrap}
+nav button{font:500 12px/1 var(--f);letter-spacing:.06em;text-transform:uppercase;padding:8px 12px;border-radius:99px;background:transparent;color:var(--mute);border:1px solid var(--line)}
+nav button.on{border-color:var(--sage);color:var(--text)}
+nav button:disabled{opacity:.35}
+h1,h2,h3{font-weight:800;line-height:1.12;text-wrap:balance;margin:0}
+h1{font-size:clamp(34px,6vw,64px);letter-spacing:-.01em}
+h2{font-size:clamp(24px,3.6vw,34px)}
+h3{font-size:18px}
+p{margin:0;max-width:62ch}
+.eyebrow{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute)}
+.mute{color:var(--mute)}
+.small{font-size:13px}
+.stack{display:flex;flex-direction:column;gap:14px;min-width:0}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+button,.btn{font:600 15px/1 var(--f);border-radius:4px;padding:14px 22px;cursor:pointer;border:1px solid var(--sage);background:var(--sage);color:var(--sageInk);text-decoration:none;display:inline-flex;align-items:center;gap:8px}
+button.ghost,.btn.ghost{background:transparent;color:var(--text);border-color:var(--line)}
+button:hover,.btn:hover{filter:brightness(1.08)}
+button:disabled{opacity:.4;cursor:default}
+:focus-visible{outline:3px solid var(--sage);outline-offset:2px}
+section{padding-top:36px}
+input[type=text]{font:500 15px var(--f);padding:12px 14px;border-radius:4px;border:1px solid var(--line);background:var(--card);color:var(--text);width:100%;max-width:320px}
+/* fragments */
+.frag{position:relative;display:block;width:100%;aspect-ratio:1/1;max-width:100%;overflow:hidden;border-radius:2px;background:var(--card)}
+.frag img{display:block;width:100%;height:100%;object-fit:cover}
+.frag .ph{position:absolute;left:8px;bottom:8px;font-size:10px;letter-spacing:.08em;text-transform:uppercase;background:rgba(0,0,0,.55);color:#fff;padding:3px 7px;border-radius:2px}
+/* home */
+.hero{display:grid;grid-template-columns:1.1fr .9fr;gap:36px;align-items:center}
+.hero .frags{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.path{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:44px}
+.path div{border-top:1px solid var(--line);padding-top:12px;min-width:0}
+.path b{display:block;margin-bottom:4px}
+/* test */
+.test{display:grid;grid-template-columns:minmax(0,380px) minmax(0,1fr);gap:40px;align-items:center}
+.test .frag{box-shadow:0 18px 40px rgba(0,0,0,.35);transition:transform .35s ease,opacity .35s}
+.test .frag.out{transform:translateX(-40px) rotate(-4deg);opacity:0}
+.bar{height:3px;background:var(--line);margin-top:22px}.bar i{display:block;height:100%;background:var(--sage);transition:width .3s}
+.slider{width:100%;accent-color:var(--sage);height:34px;margin-top:6px}
+.ends{display:flex;justify-content:space-between;font-size:13px;color:var(--mute);gap:12px}
+.verdict{font-size:22px;font-weight:600;min-height:1.5em}
+.pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;max-width:560px}
+.pair button{padding:0;background:none;border:2px solid transparent;border-radius:3px;overflow:hidden;display:block}
+.pair button:hover{border-color:var(--sage)}
+/* profile */
+.prof{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,380px);gap:40px;align-items:start}
+.axes{display:flex;flex-direction:column;gap:10px;margin-top:18px}
+.ax{display:grid;grid-template-columns:110px minmax(0,1fr) 110px;gap:12px;align-items:center;font-size:13px}
+.ax span:first-child{text-align:right;color:var(--mute)}.ax span:last-child{color:var(--mute)}
+.ax .t{position:relative;height:2px;background:var(--line)}
+.ax .t b{position:absolute;top:50%;border-radius:50%;background:var(--sage);transform:translate(-50%,-50%)}
+.ax .t b.o2{background:var(--p2)}
+.ax.strong span{color:var(--text)}
+.cardimg{width:100%;max-width:380px;display:block;border-radius:3px;box-shadow:0 18px 40px rgba(0,0,0,.35)}
+.share{background:var(--card);border:1px solid var(--line);border-radius:3px;padding:16px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px;align-items:center}
+.share input{max-width:none;font-size:13px}
+.qr{background:#fff;padding:8px;border-radius:3px;width:146px;height:146px}
+.qr img,.qr canvas{width:130px!important;height:130px!important}
+/* picks */
+.picks{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:22px;margin-top:22px}
+.pick{background:var(--card);border:1px solid var(--line);border-radius:3px;display:flex;flex-direction:column;cursor:pointer;text-align:left;color:var(--text);padding:0;font:inherit;min-width:0}
+.pick:hover{border-color:var(--sage)}
+.pick .im{position:relative}
+.pick .frag{aspect-ratio:3/2;border-radius:0}
+.pick .pct{position:absolute;top:10px;left:10px;background:var(--bg);color:var(--text);font-weight:800;font-size:13px;padding:5px 9px;border-radius:99px}
+.pick .tx{padding:14px 16px 18px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.tag{display:inline-block;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--sage);border:1px solid var(--line);border-radius:99px;padding:3px 8px;margin-right:4px}
+.who{font-size:13px;font-weight:600}
+/* exhibition */
+.ex{display:grid;grid-template-columns:minmax(0,360px) minmax(0,1fr);gap:40px;align-items:start}
+.why{background:var(--card);border:1px solid var(--line);padding:16px 18px;border-radius:3px}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chips button{background:transparent;color:var(--text);border-color:var(--line);padding:10px 14px;font-weight:500}
+.chips button.sel{background:var(--sage);color:var(--sageInk);border-color:var(--sage)}
+.qty{display:flex;align-items:center;gap:10px}.qty button{padding:8px 14px}
+.guide{background:var(--ink);border:1px solid var(--line);border-radius:3px;padding:18px}
+.trk{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.trk:last-child{border-bottom:0}
+.trk button{padding:9px 12px;font-size:13px}
+.trk.on .nm{color:var(--sage)}
+.prog{height:2px;background:var(--line);margin-top:6px}.prog i{display:block;height:100%;width:0;background:var(--sage)}
+.lyr{font-size:14px;margin-top:12px;min-height:3em}
+.steps3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.steps3 div{border-top:1px solid var(--line);padding-top:10px;min-width:0}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--text);color:var(--bg);padding:10px 16px;border-radius:4px;font-weight:600;font-size:14px;z-index:9}
+footer{margin-top:56px;border-top:1px solid var(--line);padding-top:16px;font-size:12px;color:var(--mute)}
+footer p{max-width:80ch}
+@media (max-width:760px){
+  .hero,.test,.prof,.ex{grid-template-columns:1fr}
+  .test .frag{max-width:320px;margin:0 auto}
+  .path,.steps3{grid-template-columns:1fr}
+  .ax{grid-template-columns:84px minmax(0,1fr) 84px}
+  .share{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<header><div class="hd">
+  <button class="logo" id="logo" aria-label="На главную">OBRAZ</button>
+  <nav id="nav">
+    <button data-s="test">Тест</button><button data-s="profile">Профиль</button><button data-s="picks">Подборка</button><button data-s="together">Вместе</button>
+  </nav>
+</div></header>
+<main class="wrap" id="app"></main>
+
+<script>
+/* ---------- данные ---------- */
+// 7 визуальных осей: цвет (температура, яркость, светлота), форма, плотность, симметрия, настроение (динамика)
+const AX=[
+ {k:'temp',lo:'холодный',hi:'тёплый',loP:'холодные цвета',hiP:'тёплые цвета'},
+ {k:'sat',lo:'приглушённый',hi:'яркий',loP:'приглушённый цвет',hiP:'яркий, насыщенный цвет'},
+ {k:'light',lo:'тёмный',hi:'светлый',loP:'тёмные тона',hiP:'светлые тона'},
+ {k:'form',lo:'угловатая форма',hi:'округлая форма',loP:'острые, угловатые формы',hiP:'мягкие, округлые формы'},
+ {k:'dens',lo:'минимализм',hi:'плотность',loP:'минимализм и воздух',hiP:'плотные, насыщенные композиции'},
+ {k:'sym',lo:'асимметрия',hi:'симметрия',loP:'свободная асимметрия',hiP:'симметрия и порядок'},
+ {k:'dyn',lo:'покой',hi:'движение',loP:'спокойное настроение',hiP:'движение и энергия'}];
+const D=AX.length;
+const TODAY=new Date('2026-10-14');
+const ARTIFACT_URL='https://claude.ai/artifact/SWFcWWpqGKHvas3ehx49Lu';
+// Текущие выставки Москвы (по Яндекс Афише и сайтам площадок, октябрь 2026). Оси размечены вручную по характеру выставки.
+const EX=[
+ {id:'pastel',t:'Хрупкое искусство. Пастель из фондов графики XVIII — начала XX века',v:'Третьяковская галерея, Инженерный корпус',g:'tretyakov',d:'до 1 ноября',from:'2026-09-01',p:'от 500 ₽',
+  x:[.4,-.5,.7,.7,-.2,.3,-.6],about:'Пастель из фондов отдела графики: портреты, пейзажи, этюды. Мягкий пигмент, бархатная поверхность, свет внутри цвета.',
+  look:['обратите внимание, как пастель держит свет: самые светлые места оставлены бумагой','найдите портрет, где цвет лица собран из холодных и тёплых штрихов','отойдите на два шага: размытые края собираются в форму']},
+ {id:'musatov',t:'Виктор Борисов-Мусатов. Гармония образа',v:'Третьяковская галерея, Кадашёвская наб.',g:'tretyakov',d:'октябрь',from:'2026-09-01',p:'от 500 ₽',
+  x:[-.4,-.4,.3,.8,.1,.2,-.5],about:'Живопись Борисова-Мусатова: усадебные сцены, голубые и зелёные тона, плавные силуэты, ощущение сна.',
+  look:['заметьте, как цвет почти выцветает: голубой, серо-зелёный, жемчужный','фигуры повторяют изгибы деревьев и прудов, формы перетекают друг в друга','постойте у одной работы подольше: движение в ней очень медленное']},
+ {id:'kuzmin',t:'Николай Кузьмин. Графика',v:'Новая Третьяковка, Крымский Вал, 10',g:'tretyakov',d:'до 14 ноября',from:'2026-05-28',p:'от 500 ₽',
+  x:[.1,-.6,.8,.2,-.7,-.2,.1],about:'Акварели, книжные иллюстрации и московские улицы столетней давности. Тонкая линия, много белого листа.',
+  look:['посмотрите, сколько места занимает пустой лист: он работает как воздух','линия здесь быстрая и лёгкая, без исправлений','сравните иллюстрации с городскими листами: где линии больше, где цвета']},
+ {id:'xx',t:'Искусство XX века',v:'Новая Третьяковка, Крымский Вал, 10',g:'tretyakov',d:'постоянная экспозиция',from:'2020-01-01',p:'от 500 ₽',
+  x:[.3,.8,.1,-.7,.4,-.4,.8],about:'Авангард и искусство XX века: Малевич, Гончарова, Попова, Родченко. Чистый цвет, острые формы, диагонали.',
+  look:['начните с зала авангарда: красный, чёрный и белый спорят друг с другом','ищите диагонали, они дают ощущение рывка','сравните «Чёрный квадрат» с соседними работами: тишина против шума']},
+ {id:'impr',t:'От импрессионизма до авангарда',v:'ГМИИ им. А. С. Пушкина, Волхонка, 14',g:'pushkin',d:'до 25 октября',from:'2026-07-21',p:'от 300 ₽',
+  x:[.5,.6,.4,.1,.3,-.3,.5],about:'Европейское искусство от Моне до Пикассо: мазок, свет, яркий цвет, постепенный распад формы.',
+  look:['следите, как от зала к залу мазок становится крупнее, а форма проще','у Моне цвет дрожит, у Матисса он стоит плоско и звонко','в конце маршрута форма уже собрана из углов и плоскостей']},
+ {id:'star',t:'Молчание звезды',v:'ММОМА, Гоголевский бульвар, 10',g:'mmoma',d:'до 1 ноября',from:'2026-08-26',p:'от 500 ₽',
+  x:[-.6,-.3,-.6,.2,-.5,.1,-.3],about:'Около 70 работ молодых художников и признанных мастеров, в том числе графика. Тихая выставка о паузе и темноте.',
+  look:['здесь много тёмного и пустого пространства, дайте глазам привыкнуть','обратите внимание на свет в залах: он часть работ','выберите одну работу и попробуйте услышать в ней тишину']},
+ {id:'phen',t:'Феномены. Современная московская живопись и пересборка реального',v:'ММОМА',g:'mmoma',d:'до 28 марта 2027',from:'2026-04-16',p:'от 500 ₽',
+  x:[.2,.6,0,-.2,.7,-.6,.6],about:'Одиннадцать живописцев поколения 2000-х. Плотная, яркая живопись, город и экран, разорванные композиции.',
+  look:['композиции здесь собраны как экран телефона: много слоёв сразу','ищите, где художник оставил тихое место среди шума','сравните двух соседних авторов: у кого цвет громче']},
+ {id:'ludwig',t:'Шедевры искусства второй половины XX века. Дар Петера и Ирене Людвиг',v:'Русский музей в ЗИЛАРТе',g:'zilart',d:'до 7 февраля 2027',from:'2026-09-05',p:'от 400 ₽',
+  x:[.1,.7,.3,-.4,.2,-.2,.4],about:'Поп-арт и искусство второй половины XX века из коллекции Людвигов: Уорхол, Лихтенштейн, советский нонконформизм.',
+  look:['поп-арт говорит языком рекламы: плоский цвет, контур, повтор','найдите работы, где форма собрана из точек или полос','сравните западный поп-арт и советский нонконформизм: где больше иронии']},
+ {id:'dali',t:'Сальвадор Дали и Пабло Пикассо',v:'Музей «Дали и Пикассо»',g:'dali',d:'до 24 января',from:'2026-02-01',p:'от 800 ₽',
+  x:[.4,.3,0,.3,.4,-.7,.7],about:'Графика двух мастеров: сюрреалистические сюжеты Дали и ломаные формы Пикассо.',
+  look:['у Дали формы плавятся и тянутся, у Пикассо ломаются','посмотрите, как по-разному двое рисуют одно лицо','графика показывает руку художника лучше живописи, ищите быстрые линии']},
+ {id:'inside',t:'Внутри шедевра',v:'Центр «Марс»',g:'mars',d:'1–31 октября',from:'2026-10-01',p:'от 900 ₽',
+  x:[.2,.9,-.2,.5,.8,0,.9],about:'Иммерсивная выставка: картины проецируются на стены и пол, зритель оказывается внутри изображения.',
+  look:['встаньте в центр зала: изображение окружает со всех сторон','следите, как картина распадается на мазки при увеличении','сядьте на пол, проекция меняется и снизу выглядит иначе']},
+ {id:'dream',t:'Сон в музее',v:'Центр «Марс»',g:'mars',d:'до 31 октября',from:'2026-09-01',p:'от 900 ₽',
+  x:[-.5,.2,-.8,.7,0,.3,-.4],about:'Медленная медиавыставка в полутьме: мягкий свет, плавные формы, звук.',
+  look:['здесь важен темп: двигайтесь медленнее, чем обычно','свет появляется и исчезает плавно, как дыхание','попробуйте закрыть глаза на минуту и послушать звук зала']},
+ {id:'turtle',t:'Золотая черепаха',v:'Манеж, Манежная пл., 1',g:'manege',d:'октябрь — декабрь',from:'2026-10-01',p:'от 500 ₽',
+  x:[.3,.5,.2,.6,.6,-.1,.3],about:'Фестиваль фотографии дикой природы: животные, пейзажи, макросъёмка.',
+  look:['ищите кадры, где цвет природы ярче любой графики','обратите внимание на ритм: стаи, полосы, узоры','макросъёмка превращает насекомое в абстракцию']},
+ {id:'paris',t:'Русский Париж. 1814–1914',v:'Дом русского зарубежья им. Солженицына',g:'drz',d:'16 октября — 7 февраля',from:'2026-10-16',p:'от 300 ₽',
+  x:[.5,-.2,.4,.3,.5,.5,-.3],about:'Век русских в Париже: живопись, графика, письма, фотографии, предметы быта.',
+  look:['выставка устроена как дневник: смотрите вещи рядом с картинами','цвет здесь тёплый, приглушённый, как у старой бумаги','найдите афиши и обложки: это почти графический дизайн своего времени']},
+ {id:'shito',t:'Шито-вышито',v:'Всероссийский музей декоративного искусства',g:'vmdpni',d:'16 октября — 31 января',from:'2026-10-16',p:'от 400 ₽',
+  x:[.6,.7,.4,.4,.9,.9,-.1],about:'Вышивка и текстиль: орнамент, плотный узор, зеркальная симметрия, красный и золотой.',
+  look:['подойдите вплотную: орнамент собран из тысяч одинаковых стежков','почти каждый узор зеркален, ищите ось симметрии','красный здесь не один, найдите хотя бы три его оттенка']},
+];
+// как выглядит фрагмент каждой выставки (пока плейсхолдер вместо пресс-фото)
+const LOOK={pastel:'pastel',musatov:'haze',kuzmin:'ink',xx:'planes',impr:'dabs',star:'night',phen:'brush',ludwig:'pop',dali:'flow',inside:'swirl',dream:'glow',turtle:'cells',paris:'sepia',shito:'stitch'};
+// 10 фрагментов для теста
+const TEST_IDS=['xx','kuzmin','pastel','star','phen','inside','shito','dream','dali','paris'];
+// 2 вопроса картинками, вес 0.5
+const PICS=[
+ {q:'Какой вечер ближе?',o:[{x:[-.7,-.4,-.6,.1,-.6,.3,-.5],m:'night',s:301},{x:[.7,.6,.5,.2,.6,-.2,.5],m:'dabs',s:302}]},
+ {q:'Где хочется задержаться?',o:[{x:[0,-.2,.3,.8,0,.8,-.6],m:'stitch',s:303},{x:[0,.4,.2,-.8,.2,-.8,.8],m:'planes',s:304}]},
+];
+
+/* ---------- фрагменты-плейсхолдеры: рисуются на canvas по разметке выставки ---------- */
+function rng(s){return()=>{s|=0;s=s+0x6D2B79F5|0;let t=Math.imul(s^s>>>15,1|s);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const cl=(v,a,b)=>Math.max(a,Math.min(b,v));
+const hsl=(h,s,l,a=1)=>`hsla(${((h%360)+360)%360},${cl(s,0,100)}%,${cl(l,0,100)}%,${a})`;
+const hueOf=tp=>tp<0?280+tp*70:(280+Math.min(125,tp*250))%360;
+function palette(x){const [tp,sa,li]=x;return{h:hueOf(tp),s:12+(sa+1)/2*68,L:14+(li+1)/2*72}}
+const seedOf=id=>Math.abs([...String(id)].reduce((a,c)=>a*31+c.charCodeAt(0)|0,7));
+const FCACHE={};
+function fragURL(x,mode,seed){
+  const key=mode+seed;if(FCACHE[key])return FCACHE[key];
+  const N=480,c=document.createElement('canvas');c.width=c.height=N;const g=c.getContext('2d'),r=rng(seed),P=palette(x);
+  const {h,s,L}=P,pick=a=>a[Math.floor(r()*a.length)];
+  const fill=col=>{g.fillStyle=col;g.fillRect(0,0,N,N)};
+  const stroke=(x0,y0,len,ang,w,col,curve=0)=>{g.strokeStyle=col;g.lineWidth=w;g.lineCap='round';g.beginPath();g.moveTo(x0,y0);
+    g.quadraticCurveTo(x0+Math.cos(ang+curve)*len/2,y0+Math.sin(ang+curve)*len/2,x0+Math.cos(ang)*len,y0+Math.sin(ang)*len);g.stroke()};
+  switch(mode){
+    case 'pastel':fill(hsl(h+20,s*.5,82));for(let i=0;i<700;i++)stroke(r()*N,r()*N,20+r()*50,-.9+r()*.5,6+r()*10,hsl(h+r()*80-40,s*.7,62+r()*28,.18+r()*.2),.3);break;
+    case 'haze':fill(hsl(190,22,58));for(let i=0;i<60;i++){const gr=g.createRadialGradient(r()*N,r()*N,0,r()*N,r()*N,60+r()*160);gr.addColorStop(0,hsl(pick([170,200,220,90]),25,55+r()*25,.5));gr.addColorStop(1,hsl(200,20,60,0));g.fillStyle=gr;g.fillRect(0,0,N,N)}break;
+    case 'ink':fill('#F3EFE4');g.strokeStyle='rgba(30,25,30,.85)';for(let k=0;k<26;k++){let px=r()*N,py=r()*N;g.lineWidth=.6+r()*1.2;g.beginPath();g.moveTo(px,py);for(let j=0;j<8;j++){px+=r()*60-30;py+=r()*50-25;g.lineTo(px,py)}g.stroke()}
+      for(let i=0;i<5;i++){g.fillStyle=hsl(pick([20,200,90]),40,60,.35);g.beginPath();g.ellipse(r()*N,r()*N,20+r()*50,10+r()*30,r()*3,0,7);g.fill()}break;
+    case 'planes':fill('#EFE9DC');for(let i=0;i<9;i++){g.save();g.translate(r()*N,r()*N);g.rotate(-.6+r()*.4);g.fillStyle=pick(['#C8302A','#111','#2B4AA0','#E2B22B','#111']);
+      r()<.2?(g.beginPath(),g.arc(0,0,20+r()*40,0,7),g.fill()):g.fillRect(-r()*120,-r()*30,40+r()*200,10+r()*50);g.restore()}break;
+    case 'dabs':fill(hsl(h,s*.6,L));for(let i=0;i<1400;i++){g.fillStyle=hsl(h+r()*140-70,s+10,L+r()*40-15,.75);g.save();g.translate(r()*N,r()*N);g.rotate(r()*3);g.fillRect(0,0,10+r()*12,4+r()*5);g.restore()}break;
+    case 'brush':fill(hsl(h+180,s,L));for(let i=0;i<90;i++)stroke(r()*N,r()*N,80+r()*240,r()*6.3,14+r()*40,hsl(h+r()*200-100,s+20,L+r()*40-20,.85),r()-.5);break;
+    case 'pop':fill(hsl(h+40,85,62));g.fillStyle=hsl(h-30,80,50);for(let y=0;y<N;y+=14)for(let x0=(y/14%2)*7;x0<N;x0+=14){const rr=2+5*(x0/N);g.beginPath();g.arc(x0,y,rr,0,7);g.fill()}
+      g.lineWidth=10;g.strokeStyle='#111';for(let i=0;i<3;i++){g.fillStyle=pick([hsl(200,80,55),'#F7E04B','#fff',hsl(350,85,55)]);g.beginPath();g.ellipse(r()*N,r()*N,50+r()*80,40+r()*70,r(),0,7);g.fill();g.stroke()}break;
+    case 'flow':fill(hsl(40,45,78));for(let i=0;i<14;i++){g.strokeStyle=hsl(pick([20,30,210,0]),40,20+r()*30,.85);g.lineWidth=1+r()*3;g.beginPath();g.moveTo(-20,r()*N);
+      g.bezierCurveTo(r()*N,r()*N,r()*N,r()*N,N+20,r()*N);g.stroke()}g.fillStyle=hsl(25,60,40,.8);g.beginPath();g.ellipse(N*.6,N*.55,60,110,.4,0,7);g.fill();break;
+    case 'swirl':fill(hsl(h,s,12));g.globalCompositeOperation='lighter';for(let i=0;i<260;i++){const a=r()*6.3,rad=r()*N*.6;stroke(N/2+Math.cos(a)*rad,N/2+Math.sin(a)*rad,30+r()*60,a+1.6,3+r()*8,hsl(h+r()*160-80,90,50,.35),.6)}break;
+    case 'night':fill('#0B0B14');for(let i=0;i<220;i++){g.fillStyle=`rgba(255,255,255,${r()*.8})`;g.fillRect(r()*N,r()*N,1.5,1.5)}{const gr=g.createRadialGradient(N*.35,N*.4,0,N*.35,N*.4,N*.5);gr.addColorStop(0,hsl(h,40,70,.6));gr.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=gr;g.fillRect(0,0,N,N)}break;
+    case 'glow':fill(hsl(h,40,8));g.globalCompositeOperation='lighter';for(let i=0;i<7;i++){const X=r()*N,Y=r()*N,gr=g.createRadialGradient(X,Y,0,X,Y,90+r()*160);gr.addColorStop(0,hsl(h+r()*80-40,70,55,.55));gr.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=gr;g.fillRect(0,0,N,N)}break;
+    case 'cells':fill(hsl(h,s,L-15));for(let i=0;i<160;i++){const X=r()*N,Y=r()*N,R=8+r()*38,gr=g.createRadialGradient(X-R/3,Y-R/3,1,X,Y,R);gr.addColorStop(0,hsl(h+r()*60,s+20,L+25));gr.addColorStop(1,hsl(h+r()*60-30,s,L-25));g.fillStyle=gr;g.beginPath();g.arc(X,Y,R,0,7);g.fill()}break;
+    case 'sepia':fill('#D9C7A4');for(let y=40;y<N;y+=26){g.fillStyle='rgba(80,55,30,.35)';g.fillRect(40+r()*20,y,180+r()*200,3)}g.strokeStyle='rgba(70,45,25,.8)';g.lineWidth=3;g.strokeRect(N*.55,N*.12,N*.35,N*.5);
+      g.fillStyle='rgba(120,80,45,.5)';g.fillRect(N*.57,N*.14,N*.31,N*.46);break;
+    case 'stitch':fill('#E8DFCC');{const cs=12,n=N/cs,half=n/2;const motif=[];for(let i=0;i<half;i++){motif[i]=[];for(let j=0;j<half;j++)motif[i][j]=r()<.35+.25*Math.sin(i*.9)*Math.cos(j*.9)?(r()<.7?0:1):-1}
+      for(let i=0;i<n;i++)for(let j=0;j<n;j++){const a=i<half?i:n-1-i,b=j<half?j:n-1-j,v=motif[a][b];if(v<0)continue;g.strokeStyle=v?'#C9A23A':'#B3262B';g.lineWidth=2.2;const X=j*cs,Y=i*cs;g.beginPath();g.moveTo(X+2,Y+2);g.lineTo(X+cs-2,Y+cs-2);g.moveTo(X+cs-2,Y+2);g.lineTo(X+2,Y+cs-2);g.stroke()}}break;
+  }
+  g.globalCompositeOperation='source-over';
+  const im=g.getImageData(0,0,N,N),d=im.data;for(let i=0;i<d.length;i+=4){const n=(r()-.5)*18;d[i]+=n;d[i+1]+=n;d[i+2]+=n}g.putImageData(im,0,0);
+  return FCACHE[key]=c.toDataURL('image/jpeg',.85);
+}
+const frag=(e,label)=>`<span class="frag"><img src="${fragURL(e.x,LOOK[e.id],seedOf(e.id))}" alt="Фрагмент работы с выставки"><span class="ph">${label||'плейсхолдер · фрагмент выставки'}</span></span>`;
+
+/* ---------- формула Алёны ---------- */
+function computeProfile(items){
+  const p=Array(D).fill(0),sw=items.reduce((a,i)=>a+i.w*Math.abs(i.r),0)||1;
+  items.forEach(i=>i.x.forEach((v,k)=>p[k]+=i.w*i.r*v));
+  for(let k=0;k<D;k++)p[k]=cl(p[k]/sw,-1,1);
+  const W=items.reduce((a,i)=>a+i.w,0), mr=items.reduce((a,i)=>a+i.w*i.r,0)/W;
+  const w=AX.map((_,k)=>{const mx=items.reduce((a,i)=>a+i.w*i.x[k],0)/W;
+    let c=0,vr=0,vx=0;items.forEach(i=>{const dr=i.r-mr,dx=i.x[k]-mx;c+=i.w*dr*dx;vr+=i.w*dr*dr;vx+=i.w*dx*dx});
+    const corr=(vr&&vx)?c/Math.sqrt(vr*vx):0; return .15+1.6*Math.abs(corr)});
+  return{p,w};
+}
+const pref=(x,P)=>Math.exp(-.2*x.reduce((a,v,k)=>a+P.w[k]*(v-P.p[k])**2,0));
+// одна или несколько анкет: оценка = min(совпадений) − 0,25·повтор + 0,05·новизна
+function rank(people){
+  const left=EX.map(e=>{const prs=people.map(P=>pref(e.x,P));return{e,prs,pr:Math.min(...prs),nov:(TODAY-new Date(e.from))/864e5<=21?1:0}});
+  const out=[],seen={};
+  while(left.length){
+    left.forEach(o=>{o.rep=seen[o.e.g]||0;o.sc=o.pr-.25*o.rep+.05*o.nov});
+    left.sort((a,b)=>b.sc-a.sc);const o=left.shift();seen[o.e.g]=(seen[o.e.g]||0)+1;out.push(o);
+  }
+  return out;
+}
+function why(e,people){
+  const many=people.length>1;
+  const parts=AX.map((a,k)=>{const ps=people.map(P=>P.p[k]),same=ps.every(v=>Math.sign(v)===Math.sign(ps[0])&&Math.abs(v)>.08);
+      const pk=ps.reduce((x,y)=>x+y,0)/ps.length,wk=Math.min(...people.map(P=>P.w[k]));
+      return{a,k,pk,ok:same&&Math.sign(e.x[k])===Math.sign(pk),fit:wk*(1-Math.abs(e.x[k]-pk)/2)*Math.min(1,Math.abs(pk)*3)}})
+    .filter(o=>o.ok).sort((a,b)=>b.fit-a.fit).slice(0,2);
+  const pole=o=>o.pk>0?o.a.hiP:o.a.loP,list=parts.map(pole).join(' и ');
+  let s;
+  if(many)s=parts.length?`${people.length>2?'Вам всем':'Вам обоим'} близки ${list}, и в этой выставке этого много.`:'Здесь больше всего того, что у вас совпадает.';
+  else{const tpl=[`Вам близки ${list}, и эта выставка построена на них.`,`Вы высоко оценили ${list}. Здесь этого много.`,`Совпадает с вашим вкусом: ${list}.`];
+    s=parts.length?tpl[seedOf(e.id)%3]:'Выставка близка к вашему профилю сразу по нескольким осям.'}
+  let m='';
+  if(!many){const P=people[0],miss=AX.map((a,k)=>({a,k,d:Math.abs(e.x[k]-P.p[k])*P.w[k]})).sort((a,b)=>b.d-a.d)[0];
+    if(miss.d>.9)m=` Здесь больше, чем вы привыкли: ${e.x[miss.k]>0?miss.a.hiP:miss.a.loP}. Это может стать открытием.`}
+  return{s,m,tags:parts.map(o=>o.pk>0?o.a.hi:o.a.lo)};
+}
+function typeName(P){
+  const o=AX.map((a,k)=>({a,k,v:P.p[k],imp:Math.abs(P.p[k])*P.w[k]})).sort((a,b)=>b.imp-a.imp);
+  const adj={temp:['Холодный','Тёплый'],sat:['Тихий','Яркий'],light:['Ночной','Светлый'],form:['Острый','Мягкий'],dens:['Чистый','Насыщенный'],sym:['Свободный','Точный'],dyn:['Спокойный','Подвижный']};
+  const noun={temp:['взгляд','взгляд'],sat:['созерцатель','колорист'],light:['наблюдатель','наблюдатель'],form:['конструктор','лирик'],dens:['минималист','собиратель'],sym:['импровизатор','архитектор'],dyn:['созерцатель','исследователь']};
+  const a=o[0],b=o[1];return adj[a.a.k][a.v>0?1:0]+' '+noun[b.a.k][b.v>0?1:0];
+}
+
+/* ---------- ссылки: профиль зашит в ссылку числами, без сервера и без хранения ---------- */
+const L21='abcdefghijklmnopqrstu';
+const encP=P=>P.p.map(v=>L21[Math.round((cl(v,-1,1)+1)*10)]).join('')+P.w.map(v=>L21[Math.round(cl((v-.15)/1.6,0,1)*20)]).join('');
+const decP=s=>(s&&s.length===2*D&&[...s].every(c=>L21.includes(c)))?{p:[...s.slice(0,D)].map(c=>L21.indexOf(c)/10-1),w:[...s.slice(D)].map(c=>.15+L21.indexOf(c)/20*1.6)}:null;
+const encName=n=>[...n.trim().slice(0,14)].map(c=>c.codePointAt(0).toString(36)).join('~');
+const decName=s=>{try{return s?s.split('~').map(t=>String.fromCodePoint(parseInt(t,36))).join(''):''}catch(e){return''}};
+const encPerson=o=>encP(o)+(o.name?'_'+encName(o.name):'');
+const decPerson=t=>{const [a,b]=t.split('_'),P=decP(a);return P?Object.assign(P,{name:decName(b)}):null};
+const baseURL=()=>location.href.split('#')[0];
+const linkFor=(kind,people)=>baseURL()+'#'+kind+'.'+people.map(encPerson).join('.');
+const MAXP=5;
+
+/* ---------- состояние (только в памяти страницы) ---------- */
+let S={screen:'home',i:0,ratings:{},pics:{},profile:null,ex:null,date:0,qty:1,booked:{},guests:[],invite:false,viewOnly:false,myName:'',share:null,fromLink:false};
+const app=document.getElementById('app');
+function go(screen,extra){stopAudio();Object.assign(S,{screen},extra||{});render();window.scrollTo({top:0})}
+document.getElementById('logo').onclick=()=>go('home');
+document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>go(b.dataset.s==='test'?'test':b.dataset.s,b.dataset.s==='test'?{i:0,ratings:{},pics:{}}:{}));
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const exById=id=>EX.find(e=>e.id===id);
+const afisha=e=>'https://afisha.yandex.ru/moscow/search?text='+encodeURIComponent(e.t);
+const TOTAL=TEST_IDS.length+PICS.length;
+const order=[...TEST_IDS.slice(0,4).map(id=>({k:'r',id})),{k:'q',n:0},...TEST_IDS.slice(4,8).map(id=>({k:'r',id})),{k:'q',n:1},...TEST_IDS.slice(8).map(id=>({k:'r',id}))];
+// группа: гости из ссылки + я (если прошёл тест)
+const me=()=>S.profile?Object.assign({},S.profile,{name:S.myName,me:true}):null;
+const group=()=>S.guests.length?[...S.guests,...(S.profile&&!S.viewOnly?[me()]:[])]:[];
+const label=(o,i)=>o.me?'Вы':(o.name||('Участник '+(i+1)));
+const NAV={home:'',test:'test',profile:'profile',picks:'picks',ex:'picks',ticket:'picks',guide:'picks',together:'together',invite:'together'};
+
+function render(){
+  document.querySelectorAll('#nav button').forEach(b=>{b.classList.toggle('on',NAV[S.screen]===b.dataset.s);
+    b.disabled=(b.dataset.s==='profile'&&!S.profile)||(b.dataset.s==='picks'&&!S.profile&&!S.guests.length)});
+  ({home,test,profile,picks,ex,ticket,guide,together,invite})[S.screen]();
+}
+function toast(t){const d=document.createElement('div');d.className='toast';d.textContent=t;document.body.appendChild(d);setTimeout(()=>d.remove(),1800)}
+function shareBox(url,title){
+  return`<div class="share"><div class="stack"><p class="eyebrow">${title}</p><input type="text" id="lnk" readonly value="${esc(url)}" aria-label="Ссылка">
+    <div class="row"><button id="cp">Скопировать</button></div><p class="mute small">В ссылке только числа по осям${url.includes('_')?' и имя, которое вы указали':''}. Мы её нигде не храним.</p></div><div class="qr" id="qr" aria-label="QR-код ссылки"></div></div>`;
+}
+function wireShare(url){
+  const inp=document.getElementById('lnk');
+  document.getElementById('cp').onclick=()=>{const done=()=>toast('Ссылка скопирована');
+    try{navigator.clipboard.writeText(url).then(done,()=>{inp.select();toast('Выделено, нажмите Копировать')})}catch(e){inp.select();toast('Выделено, нажмите Копировать')}};
+  inp.onfocus=()=>inp.select();
+  const q=document.getElementById('qr');
+  if(window.QRCode){new QRCode(q,{text:url,width:130,height:130,correctLevel:QRCode.CorrectLevel.L})}else q.innerHTML='<p class="small" style="color:#333">QR появится при подключении к интернету</p>';
+}
+
+/* ---------- экраны ---------- */
+function home(){
+  app.innerHTML=`<section class="hero">
+    <div class="stack">
+      <p class="eyebrow">Выставки Москвы · октябрь 2026</p>
+      <h1>Найти выставку, которая отзовётся</h1>
+      <p class="mute">Оцените 10 фрагментов работ с текущих выставок. Obraz поймёт, какие цвета и формы вам близки, и подберёт выставки с объяснением, почему они подходят. Две минуты, без регистрации. Мы ничего не сохраняем.</p>
+      <div class="row" style="margin-top:8px">
+        <button id="start">${S.profile?'Пройти тест заново':'Начать тест'}</button>
+        <button class="ghost" id="tog">Пойти вместе</button>
+        ${S.profile?'<button class="ghost" id="mine">Моя подборка</button>':''}
+      </div>
+    </div>
+    <div class="frags">${['xx','pastel','shito','dream'].map(id=>frag(exById(id))).join('')}</div>
+  </section>
+  <div class="path">
+    <div><b>Тест → профиль</b><span class="mute small">фрагменты работ и ползунок «не нравится — нравится», затем визуальный портрет восприятия</span></div>
+    <div><b>Подборка → билет</b><span class="mute small">выставки с объяснением языком цвета и формы, билет на Яндекс Афише, аудиогид куратора</span></div>
+    <div><b>Вместе</b><span class="mute small">ссылка другу, каждый проходит тест, общая подборка для двоих или компании до 5 человек</span></div>
+  </div>${foot()}`;
+  document.getElementById('start').onclick=()=>go('test',{i:0,ratings:{},pics:{}});
+  document.getElementById('tog').onclick=()=>go('together');
+  if(S.profile)document.getElementById('mine').onclick=()=>go('picks');
+}
+const VERD=['совсем не нравится','скорее не нравится','всё равно','скорее нравится','очень нравится'];
+function test(){
+  const it=order[S.i],pct=S.i/TOTAL*100;
+  if(it.k==='r'){
+    const e=exById(it.id),v=S.ratings[it.id]??50,n=TEST_IDS.indexOf(e.id)+1;
+    app.innerHTML=`<section class="test">
+      <div id="pst">${frag(e,'плейсхолдер · фрагмент выставки '+n)}</div>
+      <div class="stack">
+        <p class="eyebrow">Фрагмент ${n} из ${TEST_IDS.length} · вопрос ${S.i+1} из ${TOTAL}</p>
+        <h2>Насколько вам нравится этот образ?</h2>
+        <p class="mute">Не думайте долго. Первая реакция точнее всего.</p>
+        <label for="sl" class="eyebrow" style="margin-top:10px">Ваша оценка</label>
+        <input type="range" id="sl" class="slider" min="0" max="100" value="${v}">
+        <div class="ends"><span>совсем не нравится</span><span>очень нравится</span></div>
+        <div class="verdict" id="vd"></div>
+        <div class="row"><button class="ghost" id="back">Назад</button><button id="next">${S.i===TOTAL-1?'Узнать результат':'Дальше'}</button></div>
+        <div class="bar"><i style="width:${pct}%"></i></div>
+      </div></section>`;
+    const sl=document.getElementById('sl'),vd=document.getElementById('vd');
+    const upd=()=>{vd.textContent=VERD[Math.min(4,Math.floor(sl.value/20.01))];S.ratings[it.id]=+sl.value};upd();sl.oninput=upd;
+    document.getElementById('next').onclick=()=>{S.ratings[it.id]=+sl.value;document.querySelector('#pst .frag').classList.add('out');setTimeout(next,220)};
+  } else {
+    const q=PICS[it.n];
+    app.innerHTML=`<section class="stack">
+      <p class="eyebrow">Вопрос картинками · ${S.i+1} из ${TOTAL}</p>
+      <h2>${q.q}</h2><p class="mute">Выберите одну картинку.</p>
+      <div class="pair">${q.o.map((o,j)=>`<button data-j="${j}" aria-label="Вариант ${j+1}"><span class="frag"><img src="${fragURL(o.x,o.m,o.s)}" alt=""></span></button>`).join('')}</div>
+      <div class="row"><button class="ghost" id="back">Назад</button></div>
+      <div class="bar" style="max-width:560px"><i style="width:${pct}%"></i></div></section>`;
+    app.querySelectorAll('.pair button').forEach(b=>b.onclick=()=>{S.pics[it.n]=+b.dataset.j;next()});
+  }
+  document.getElementById('back').onclick=()=>{if(S.i>0){S.i--;render()}else go(S.invite?'invite':'home')};
+}
+function next(){
+  if(S.i<TOTAL-1){S.i++;render();return}
+  const items=TEST_IDS.map(id=>({x:exById(id).x,r:((S.ratings[id]??50)-50)/50,w:1}));
+  PICS.forEach((q,n)=>{if(S.pics[n]==null)return;q.o.forEach((o,j)=>items.push({x:o.x,r:j===S.pics[n]?1:-1,w:.5}))});
+  if(items.every(i=>i.r===0))items[0].r=.01;
+  S.profile=computeProfile(items);S.share=null;S.viewOnly=false;
+  if(S.guests.length)go('together');else go('profile');
+}
+function axesHTML(people){
+  const maxw=Math.max(...people.flatMap(P=>P.w));
+  return`<div class="axes">${AX.map((a,k)=>`<div class="ax ${people.length===1&&people[0].w[k]>=maxw*.6?'strong':''}"><span>${a.lo}</span><div class="t">${people.map((P,i)=>{const sz=6+P.w[k]/maxw*12;return`<b class="${i%2?'o2':''}" style="left:${(P.p[k]+1)/2*100}%;width:${sz}px;height:${sz}px;opacity:${i>1?.7:1}"></b>`}).join('')}</div><span>${a.hi}</span></div>`).join('')}</div>`;
+}
+function profile(){
+  if(!S.profile){go('home');return}
+  const P=S.profile,name=typeName(P);
+  app.innerHTML=`<section class="prof">
+    <div class="stack">
+      <p class="eyebrow">Ваш визуальный портрет${S.fromLink?' · открыт по ссылке':''}</p>
+      <h1 style="font-size:clamp(30px,5vw,52px)">${name}</h1>
+      <p class="mute">Точка показывает, куда тянется ваш вкус. Чем крупнее точка, тем сильнее эта ось влияет на ваши оценки.</p>
+      ${axesHTML([P])}
+      <div class="row" style="margin-top:14px"><button id="go">Смотреть подборку</button><button class="ghost" id="tog">Пойти вместе</button></div>
+      <div class="row"><button class="ghost" id="lnkb">Ссылка на мой результат</button><button class="ghost" id="re">Пройти заново</button></div>
+      <div id="sharebox"></div>
+      <p class="mute small">Obraz ничего не хранит. Когда вы закроете страницу, профиля не останется. Чтобы вернуться к результату, сохраните карточку или ссылку: по ней подборка откроется снова без теста.</p>
+    </div>
+    <div class="stack"><p class="eyebrow">Карточка-результат</p><img class="cardimg" id="cimg" alt="Карточка с вашим визуальным портретом"><p class="mute small">Чтобы сохранить карточку, нажмите на неё и удерживайте или кликните правой кнопкой мыши.</p></div>
+  </section>${foot()}`;
+  document.getElementById('go').onclick=()=>go('picks');
+  document.getElementById('tog').onclick=()=>go('together');
+  document.getElementById('re').onclick=()=>go('test',{i:0,ratings:{},pics:{}});
+  document.getElementById('lnkb').onclick=()=>{const u=linkFor('r',[{p:P.p,w:P.w}]);document.getElementById('sharebox').innerHTML=shareBox(u,'Ссылка на мой результат');wireShare(u)};
+  drawCard([P],[name],'визуальный портрет восприятия');
+}
+function drawCard(people,names,sub){
+  const c=document.createElement('canvas');c.width=1080;c.height=1350;const x=c.getContext('2d'),dotC=['#AEA989','#D59BC0','#8FB3D9','#E3A36B','#B7D98F'];
+  const draw=()=>{
+    x.fillStyle='#1A0F22';x.fillRect(0,0,1080,1350);
+    const sw=people.length===1?5:people.length,wd=(920-(sw-1)*16)/sw;
+    for(let i=0;i<sw;i++){const P=people[people.length===1?0:i],pl=palette(P.p),shift=people.length===1?[0,30,-30,150,0][i]:0,lt=people.length===1?[0,12,-10,-4,30][i]:0;
+      x.fillStyle=hsl(pl.h+shift,pl.s,cl(pl.L+lt,10,90));x.fillRect(80+i*(wd+16),250,wd,300);
+      if(people.length>1){x.fillStyle=dotC[i];x.beginPath();x.arc(80+i*(wd+16)+24,274,12,0,7);x.fill()}}
+    x.fillStyle='#E9E6D8';x.font='800 40px Montserrat, sans-serif';x.fillText('O B R A Z',80,140);
+    x.fillStyle='#A497AE';x.font='500 28px Montserrat, sans-serif';x.fillText(sub,80,190);
+    x.fillStyle='#E9E6D8';
+    if(people.length===1){x.font='800 72px Montserrat, sans-serif';const w=names[0].split(' ');x.fillText(w[0],80,680);x.fillText(w.slice(1).join(' '),80,760)}
+    else{x.font='800 36px Montserrat, sans-serif';names.forEach((n,i)=>{x.fillStyle=dotC[i];x.fillText(n,80,640+i*54)})}
+    const maxw=Math.max(...people.flatMap(P=>P.w)),top=people.length===1?850:Math.max(850,640+people.length*54+40);
+    AX.forEach((a,k)=>{const y=top+k*62;x.fillStyle='#4A3A57';x.fillRect(330,y,420,3);
+      x.fillStyle='#A497AE';x.font='500 24px Montserrat, sans-serif';x.textAlign='right';x.fillText(a.lo,310,y+9);x.textAlign='left';x.fillText(a.hi,770,y+9);
+      people.forEach((P,i)=>{x.fillStyle=dotC[i];x.globalAlpha=people.length>1?.85:1;x.beginPath();x.arc(330+(P.p[k]+1)/2*420,y+1,8+P.w[k]/maxw*12,0,7);x.fill();x.globalAlpha=1})});
+    x.fillStyle='#A497AE';x.font='500 24px Montserrat, sans-serif';x.fillText('obraz · выставки Москвы',80,1300);
+    const img=document.getElementById('cimg');if(img)img.src=c.toDataURL('image/png');
+  };
+  (document.fonts&&document.fonts.load)?document.fonts.load('800 40px Montserrat').then(draw,draw):draw();
+}
+function pickCard(o,people){
+  const w=why(o.e,people),many=people.length>1;
+  const who=many?`<div class="who">${o.prs.map((v,i)=>`${esc(label(people[i],i))} ${Math.round(v*100)}%`).join(' · ')}</div>`:'';
+  return`<button class="pick" data-id="${o.e.id}">
+    <div class="im">${frag(o.e)}<span class="pct">${Math.round(o.pr*100)}%</span></div>
+    <div class="tx"><span class="mute small">${esc(o.e.v)} · ${esc(o.e.d)}</span><h3>${esc(o.e.t)}</h3>${who}
+    <p class="small">${esc(w.s)}</p>${o.nov?'<div><span class="tag">новая</span></div>':''}</div></button>`;
+}
+function wirePicks(){app.querySelectorAll('.pick').forEach(b=>b.onclick=()=>go('ex',{ex:b.dataset.id,date:0,qty:1}))}
+function picks(){
+  if(!S.profile){go(S.guests.length?'together':'home');return}
+  const P=S.profile,R=rank([P]);
+  app.innerHTML=`<section>
+    <div class="row" style="justify-content:space-between;align-items:end">
+      <div class="stack"><p class="eyebrow">Подборка · ${typeName(P)}</p><h2>Выставки, которые вам подходят</h2></div>
+      <div class="row"><button class="ghost" id="tog">Пойти вместе</button><button class="ghost" id="prof">Мой профиль</button></div></div>
+    <div class="picks">${R.slice(0,9).map(o=>pickCard(o,[P])).join('')}</div>
+  </section>${foot()}`;
+  wirePicks();
+  document.getElementById('prof').onclick=()=>go('profile');
+  document.getElementById('tog').onclick=()=>go('together');
+}
+/* «Вместе» */
+function invite(){
+  const g=S.guests,host=g.map((o,i)=>label(o,i));
+  const who=host.length===1?(g[0].name?`${esc(g[0].name)} зовёт тебя`:'Тебя зовут'):`${esc(host.join(', '))} зовут тебя`;
+  app.innerHTML=`<section class="stack" style="max-width:640px">
+    <p class="eyebrow">Вместе</p><h1 style="font-size:clamp(30px,5vw,52px)">${who} на выставку</h1>
+    <p>Пройди тест за 2 минуты. Obraz сравнит ваши вкусы прямо на твоём устройстве и подберёт выставки, которые понравятся ${g.length>1?'всем':'вам обоим'}.</p>
+    <label class="eyebrow" for="nm">Как тебя подписать в общей подборке (необязательно)</label>
+    <input type="text" id="nm" maxlength="14" placeholder="Имя" value="${esc(S.myName)}">
+    <div class="row"><button id="start">Пройти тест</button></div>
+    <p class="mute small">Obraz ничего не сохраняет и не собирает данных. Ваши результаты живут только в ссылке, которую вы отправите друг другу.</p>
+  </section>${foot()}`;
+  document.getElementById('nm').oninput=e=>S.myName=e.target.value;
+  document.getElementById('start').onclick=()=>go('test',{i:0,ratings:{},pics:{}});
+}
+function together(){
+  if(S.invite&&!S.profile&&!S.viewOnly){go('invite');return}
+  const G=group();
+  // 1. ещё нет ни теста, ни гостей
+  if(!G.length&&!S.profile){
+    app.innerHTML=`<section class="stack" style="max-width:720px">
+      <p class="eyebrow">Вместе</p><h2>Пойти на выставку вдвоём или компанией</h2>
+      <p>На выставку чаще идут не одни. Отправьте ссылку другу: каждый проходит тест на своём телефоне, а Obraz подбирает выставки, которые понравятся вам обоим.</p>
+      ${steps3()}
+      <div class="row"><button id="start">Сначала пройти тест</button></div></section>${foot()}`;
+    document.getElementById('start').onclick=()=>go('test',{i:0,ratings:{},pics:{}});return;
+  }
+  // 2. я прошёл тест, гостей нет: создать приглашение
+  if(!G.length){
+    app.innerHTML=`<section class="stack" style="max-width:720px">
+      <p class="eyebrow">Вместе</p><h2>Позовите друга на выставку</h2>
+      <p>Друг откроет ссылку, пройдёт тот же тест, и на его устройстве появится общая подборка. Он сможет отправить её вам обратно.</p>
+      ${steps3()}
+      <label class="eyebrow" for="nm">Как вас подписать в приглашении (необязательно)</label>
+      <input type="text" id="nm" maxlength="14" placeholder="Имя" value="${esc(S.myName)}">
+      <div class="row"><button id="mk">Создать ссылку</button></div>
+      <div id="sharebox"></div></section>${foot()}`;
+    document.getElementById('nm').oninput=e=>S.myName=e.target.value;
+    document.getElementById('mk').onclick=()=>{const u=linkFor('t',[me()]);document.getElementById('sharebox').innerHTML=shareBox(u,'Ссылка-приглашение');wireShare(u)};return;
+  }
+  // 3. общая подборка
+  const names=G.map(label),R=rank(G);
+  app.innerHTML=`<section class="stack">
+    <p class="eyebrow">Вместе · ${G.length} ${G.length<5?'человека':'человек'}</p>
+    <h2>Общая подборка: ${esc(names.join(', '))}</h2>
+    <p class="mute">Выставки отсортированы по меньшему из совпадений, чтобы понравилось каждому.</p>
+    <div class="prof" style="margin-top:6px">
+      <div class="stack">
+        <div class="row small">${G.map((o,i)=>`<span><b style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${['#AEA989','#D59BC0','#8FB3D9','#E3A36B','#B7D98F'][i]}"></b> ${esc(names[i])}: ${typeName(o)}</span>`).join('')}</div>
+        ${axesHTML(G.slice(0,2))}
+        ${S.viewOnly?`<div class="row" style="margin-top:10px"><button id="join">Пройти тест и присоединиться</button></div>`:
+        `<div class="row" style="margin-top:10px"><button id="back">Отправить подборку обратно</button>${G.length<MAXP?'<button class="ghost" id="add">Добавить ещё человека</button>':''}</div>`}
+        <div id="sharebox"></div>
+      </div>
+      <div class="stack"><p class="eyebrow">Общая карточка</p><img class="cardimg" id="cimg" alt="Общая карточка восприятия"><p class="mute small">Чтобы сохранить карточку, нажмите на неё и удерживайте или кликните правой кнопкой мыши.</p></div>
+    </div>
+    <div class="picks">${R.slice(0,6).map(o=>pickCard(o,G)).join('')}</div>
+  </section>${foot()}`;
+  wirePicks();
+  drawCard(G,names.map((n,i)=>n+' · '+typeName(G[i])),'общий портрет восприятия');
+  const enc=G.map(o=>({p:o.p,w:o.w,name:o.me?S.myName:o.name}));
+  if(S.viewOnly){const j=document.getElementById('join');if(S.guests.length>=MAXP){j.disabled=true;j.textContent='В компании уже 5 человек'}else j.onclick=()=>{S.viewOnly=false;S.invite=true;go('invite')}}
+  else{
+    document.getElementById('back').onclick=()=>{const u=linkFor('g',enc);document.getElementById('sharebox').innerHTML=shareBox(u,'Общая подборка: отправьте эту ссылку');wireShare(u)};
+    const add=document.getElementById('add');if(add)add.onclick=()=>{const u=linkFor('t',enc);document.getElementById('sharebox').innerHTML=shareBox(u,'Приглашение для следующего человека');wireShare(u)};
+  }
+}
+const steps3=()=>`<div class="steps3"><div><b>Ссылка другу</b><p class="mute small">или QR-код, до 5 человек</p></div><div><b>Каждый проходит тест</b><p class="mute small">2 минуты на своём телефоне</p></div><div><b>Общая подборка</b><p class="mute small">и проценты совпадения для каждого</p></div></div>`;
+function ex(){
+  const e=exById(S.ex),G=S.screenFrom==='together'?group():[];
+  const people=G.length?G:[S.profile];
+  const w=why(e,people),prs=people.map(P=>Math.round(pref(e.x,P)*100));
+  app.innerHTML=`<section class="ex">
+    <div style="max-width:360px">${frag(e)}</div>
+    <div class="stack">
+      <button class="ghost" id="back" style="align-self:flex-start;padding:8px 14px">← К подборке</button>
+      <p class="eyebrow">${esc(e.v)} · ${esc(e.d)}</p>
+      <h2>${esc(e.t)}</h2>
+      <p>${esc(e.about)}</p>
+      <div class="why stack"><p class="eyebrow">${people.length>1?'Почему вам '+(people.length>2?'всем':'обоим'):'Почему вам'} · ${people.length>1?prs.map((v,i)=>label(people[i],i)+' '+v+'%').join(' · '):'совпадение '+prs[0]+'%'}</p><p>${esc(w.s+w.m)}</p>
+        <div>${w.tags.map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div></div>
+      <div class="row"><button id="tk">Выбрать билет · ${esc(e.p)}</button><button class="ghost" id="gd">Послушать аудиогид</button></div>
+    </div></section>${foot()}`;
+  document.getElementById('back').onclick=()=>go(S.screenFrom==='together'?'together':'picks');
+  document.getElementById('tk').onclick=()=>go('ticket',{qty:Math.max(S.qty,people.length)});
+  document.getElementById('gd').onclick=()=>go('guide',{track:0});
+}
+function ticket(){
+  const e=exById(S.ex),days=[...Array(7)].map((_,i)=>{const d=new Date(TODAY);d.setDate(d.getDate()+i);return d});
+  const fmt=d=>d.toLocaleDateString('ru-RU',{weekday:'short',day:'numeric',month:'short'});
+  app.innerHTML=`<section class="stack" style="max-width:640px">
+    <button class="ghost" id="back" style="align-self:flex-start;padding:8px 14px">← К выставке</button>
+    <p class="eyebrow">Билет</p><h2>${esc(e.t)}</h2><p class="mute">${esc(e.v)} · ${esc(e.p)}</p>
+    <p class="eyebrow" style="margin-top:10px">Когда идёте</p>
+    <div class="chips" id="dates">${days.map((d,i)=>`<button class="${i===S.date?'sel':''}" data-i="${i}">${fmt(d)}</button>`).join('')}</div>
+    <p class="eyebrow" style="margin-top:10px">Сколько билетов</p>
+    <div class="qty"><button class="ghost" id="m">−</button><b id="q" style="min-width:2ch;text-align:center">${S.qty}</b><button class="ghost" id="p">+</button></div>
+    <div class="why stack" style="margin-top:10px"><p><b>Аудиогид куратора</b> идёт вместе с билетом и открывается на странице выставки.</p></div>
+    <div class="row" style="margin-top:6px"><a class="btn" id="buy" href="${afisha(e)}" target="_blank" rel="noopener">Оплатить на Яндекс Афише ↗</a><button class="ghost" id="gd">Открыть аудиогид</button></div>
+    <p class="mute small">Оплата проходит на Яндекс Афише. Obraz получает комиссию с билета и не видит ваших платёжных данных.</p>
+  </section>${foot()}`;
+  app.querySelectorAll('#dates button').forEach(b=>b.onclick=()=>{S.date=+b.dataset.i;ticket()});
+  document.getElementById('m').onclick=()=>{S.qty=Math.max(1,S.qty-1);document.getElementById('q').textContent=S.qty};
+  document.getElementById('p').onclick=()=>{S.qty=Math.min(10,S.qty+1);document.getElementById('q').textContent=S.qty};
+  document.getElementById('buy').addEventListener('click',()=>{S.booked[e.id]={date:fmt(days[S.date]),qty:S.qty}});
+  document.getElementById('back').onclick=()=>go('ex');
+  document.getElementById('gd').onclick=()=>go('guide',{track:0});
+}
+/* аудиогид: синтез речи браузера вместо записанного голоса куратора */
+let utt=null,tick=null;
+function stopAudio(){try{speechSynthesis.cancel()}catch(e){}clearInterval(tick);utt=null}
+function guideTracks(e){
+  return[{n:'Вступление',t:`Добро пожаловать на выставку «${e.t}». ${e.about} Я проведу вас по трём остановкам. Не торопитесь, на каждую хватит пары минут.`},
+   ...e.look.map((l,i)=>({n:`Остановка ${i+1}`,t:l.charAt(0).toUpperCase()+l.slice(1)+'.'}))];
+}
+function guide(){
+  const e=exById(S.ex),T=guideTracks(e),b=S.booked[e.id];
+  app.innerHTML=`<section class="ex">
+    <div style="max-width:300px">${frag(e)}</div>
+    <div class="stack">
+      <button class="ghost" id="back" style="align-self:flex-start;padding:8px 14px">← К выставке</button>
+      <p class="eyebrow">Аудиогид${b?` · билет на ${esc(b.date)}, ${b.qty} шт.`:''}</p><h2>${esc(e.t)}</h2>
+      <div class="guide">${T.map((t,i)=>`<div class="trk ${i===S.track?'on':''}" data-i="${i}"><button class="ghost play" data-i="${i}" aria-label="Слушать: ${t.n}">▶</button>
+        <div><div class="nm">${t.n}</div><div class="prog"><i id="pg${i}"></i></div></div><span class="mute small">${Math.max(1,Math.round(t.t.length/14))} c</span></div>`).join('')}
+        <p class="lyr" id="lyr">${esc(T[S.track].t)}</p></div>
+      <p class="mute small">В прототипе текст читает синтезатор речи браузера. В проекте здесь голос куратора или автора выставки.</p>
+      <div class="row"><button class="ghost" id="more">Другие выставки</button></div>
+    </div></section>${foot()}`;
+  const play=i=>{
+    const was=utt&&S.track===i;stopAudio();app.querySelectorAll('.play').forEach(p=>p.textContent='▶');
+    S.track=i;app.querySelectorAll('.trk').forEach(t=>t.classList.toggle('on',+t.dataset.i===i));
+    document.getElementById('lyr').textContent=T[i].t;if(was)return;
+    const btn=app.querySelector(`.play[data-i="${i}"]`);btn.textContent='❚❚';
+    const dur=T[i].t.length/14*1000,start=Date.now(),bar=document.getElementById('pg'+i);
+    tick=setInterval(()=>{const f=Math.min(1,(Date.now()-start)/dur);bar.style.width=f*100+'%';if(f>=1&&!('speechSynthesis' in window)){stopAudio();btn.textContent='▶'}},120);
+    try{utt=new SpeechSynthesisUtterance(T[i].t);utt.lang='ru-RU';utt.rate=1;
+      const v=speechSynthesis.getVoices().find(v=>/^ru/i.test(v.lang));if(v)utt.voice=v;
+      utt.onend=()=>{clearInterval(tick);bar.style.width='100%';btn.textContent='▶';utt=null;if(i<T.length-1)setTimeout(()=>play(i+1),700)};
+      speechSynthesis.speak(utt)}catch(err){utt={}}
+  };
+  app.querySelectorAll('.play').forEach(p=>p.onclick=()=>play(+p.dataset.i));
+  document.getElementById('back').onclick=()=>go('ex');
+  document.getElementById('more').onclick=()=>go(S.screenFrom==='together'?'together':'picks');
+}
+function foot(){return`<footer><p>Прототип дипломного проекта «Дизайн сайта Obraz для подбора выставок по визуальному восприятию», Алёна Якупова, РАНХиГС 2026. Выставки взяты из Яндекс Афиши и сайтов площадок на октябрь 2026, даты стоит проверить перед походом. Картинки — плейсхолдеры: на их месте будут фрагменты пресс-фото выставок без названия и автора. Obraz ничего не хранит и не собирает данных: всё считается в браузере, результат живёт только в вашей карточке или ссылке. Подбор: вкус p = Σ(r·x)/Σ|r|, вес оси w = 0,15 + 1,6·|corr|, совпадение = exp(−0,2·Σ w(x−p)²), итог = min(совпадений) − 0,25·повтор + 0,05·новизна.</p></footer>`}
+
+// откуда пришли на подборку: запоминаем, чтобы «назад» вёл в общую подборку
+const _go=go;go=function(screen,extra){if(screen==='ex'&&(S.screen==='together'||S.screen==='picks'))S.screenFrom=S.screen;_go(screen,extra)};
+
+/* ---------- старт: разбираем ссылку ---------- */
+(function boot(){
+  const h=(location.hash||'').slice(1),kind=h.slice(0,2),toks=h.slice(2).split('.').filter(Boolean);
+  const people=toks.map(decPerson).filter(Boolean).slice(0,MAXP);
+  if(kind==='r.'&&people[0]){S.profile={p:people[0].p,w:people[0].w};S.fromLink=true;S.screen='picks'}
+  else if(kind==='t.'&&people.length){S.guests=people.slice(0,MAXP-1);S.invite=true;S.screen='invite'}
+  else if(kind==='g.'&&people.length){S.guests=people;S.viewOnly=true;S.screen='together'}
+  render();
+})();
+</script>
