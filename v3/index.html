@@ -1,0 +1,1588 @@
+<!doctype html>
+<html lang="ru">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta property="og:title" content="Obraz v3 — путеводитель по выставкам">
+<meta property="og:description" content="Три хода: погода, узор, карта. Твой путь по выставкам Москвы, в том числе по Пушкинской карте. Ничего не хранится.">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#000000">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230E0E10'/%3E%3Crect x='7' y='9' width='18' height='4' fill='%23F29AC4'/%3E%3Crect x='9' y='15' width='18' height='4' fill='%2321CFC2'/%3E%3Crect x='7' y='21' width='18' height='4' fill='%23EDECE7'/%3E%3C/svg%3E">
+<title>Путеводитель Obraz v3</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Цифровой путеводитель по выставкам Москвы: три хода игры и путь по выставкам, в том числе по Пушкинской карте.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Golos+Text:wght@400;500;600&family=Unbounded:wght@300;500&family=Playfair+Display:ital,wght@0,700;1,400;1,700&family=Oranienbaum&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+/* Layout: плакатная стена на чёрном. Под обрез, одна колонка экранов, которые меняются на месте.
+   Правила из плакатов Алёны: целого нет (срезы), буква как картинка, цифровой сбой, фактура вместо заливки, всё движется, кислотный цвет на чёрном.
+   Розовый = тепло, бирюза = холод: цвет работает как смысл, а не как украшение. Один осознанный тёмный вид для всех тем. */
+:root{
+  color-scheme:dark;
+  --bg:#000000;        /* поле плаката */
+  --panel:#0C0B10;     /* подложка блоков схемы */
+  --fg:#F2EEF4;        /* текст, тёплый белый с лиловым */
+  --mute:#9C95A6;      /* подписи */
+  --rule:#2C2833;      /* линии */
+  --cyan:#00E6DA;      /* холод */
+  --pink:#F4C2E4;      /* тепло */
+  --red:#F5321E;       /* сбой, приводка */
+  --violet:#A968C2;    /* ночь */
+  --display:"Oswald","Arial Narrow",sans-serif;
+  --body:"Golos Text",system-ui,sans-serif;
+  --wide:"Unbounded",Arial,sans-serif;
+  --serif:"Playfair Display",Georgia,serif;
+}
+*{box-sizing:border-box}
+html{background:var(--bg);padding-block:env(safe-area-inset-top,0px) env(safe-area-inset-bottom,0px)}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--fg);font:400 16px/1.55 var(--body);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 56px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+a{color:var(--cyan)}
+img,canvas{max-width:100%}
+p{margin:0;max-width:64ch}
+h1,h2,h3{font-family:var(--display);font-weight:700;text-transform:uppercase;line-height:.92;margin:0;text-wrap:balance;letter-spacing:.005em}
+h1{font-size:clamp(46px,8.6vw,120px)}
+h2{font-size:clamp(34px,5.4vw,66px)}
+h3{font-size:clamp(22px,2.6vw,30px);line-height:1}
+.lab{font:300 11px/1.35 var(--wide);letter-spacing:.16em;text-transform:uppercase;color:var(--mute)}
+.mute{color:var(--mute)}.small{font-size:14px}
+.split{text-shadow:-3px 0 var(--red),3px 0 var(--cyan)}
+/* срез заголовка: две одинаковые копии в одной ячейке сетки, верхняя видна полосой и сдвинута */
+.cut{display:inline-grid;text-shadow:-3px 0 var(--red),3px 0 var(--cyan)}
+.cut>span{grid-area:1/1}
+.cut>.cb{clip-path:inset(47% 0 37% 0);transform:translateX(.06em);background:var(--bg);text-shadow:-4px 0 var(--cyan),4px 0 var(--red)}
+.stack{display:flex;flex-direction:column;gap:14px;min-width:0}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+
+/* шапка */
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background:var(--bg);border-bottom:1px solid var(--rule);margin-inline:calc(-1*max(16px,env(safe-area-inset-left,0px))) calc(-1*max(16px,env(safe-area-inset-right,0px)));padding-inline:max(16px,env(safe-area-inset-left,0px)) max(16px,env(safe-area-inset-right,0px))}
+.hd{max-width:1180px;margin:0 auto;display:flex;align-items:center;gap:14px 22px;padding-block:12px;flex-wrap:wrap}
+.logo{font:700 24px/1 var(--display);letter-spacing:.04em;color:var(--fg);background:none;border:0;padding:0;cursor:pointer;text-shadow:-2px 0 var(--red),2px 0 var(--cyan)}
+nav#nav{display:flex;gap:4px 16px;overflow-x:auto;scrollbar-width:none;flex:1 1 auto;min-width:0}
+nav#nav button{font:300 11px/1 var(--wide);letter-spacing:.14em;text-transform:uppercase;color:var(--mute);background:none;border:0;padding:8px 0;cursor:pointer;white-space:nowrap}
+nav#nav button.on{color:var(--fg);box-shadow:inset 0 -2px 0 var(--cyan)}
+nav#nav button:disabled{opacity:.35;cursor:default}
+nav#nav button:not(:disabled):hover{color:var(--fg)}
+.pkt{display:flex;align-items:center;gap:10px;font:300 11px/1.2 var(--wide);letter-spacing:.12em;text-transform:uppercase;color:var(--fg);background:none;border:1px solid var(--rule);padding:7px 10px;cursor:pointer;white-space:nowrap}
+.pkt i{width:26px;height:14px;border:1px solid var(--mute);position:relative;flex:none}
+.pkt i::after{content:"";position:absolute;top:2px;left:2px;width:8px;height:8px;background:var(--mute);transition:left .2s}
+.pkt[aria-pressed="true"]{border-color:var(--pink)}
+.pkt[aria-pressed="true"] i{border-color:var(--pink)}
+.pkt[aria-pressed="true"] i::after{left:14px;background:var(--pink)}
+
+main.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:72px;padding-top:40px}
+
+/* кнопки и поля */
+button,.btn{font:600 15px/1 var(--display);text-transform:uppercase;letter-spacing:.06em;background:var(--fg);color:var(--bg);border:1px solid var(--fg);padding:14px 20px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:8px}
+button:hover,.btn:hover{background:var(--cyan);border-color:var(--cyan)}
+button.ghost{background:transparent;color:var(--fg);border-color:var(--rule)}
+button.ghost:hover{border-color:var(--fg);background:transparent}
+button:disabled{opacity:.35;cursor:default}
+button:disabled:hover{background:var(--fg);border-color:var(--fg)}
+button.ghost:disabled:hover{background:transparent;border-color:var(--rule)}
+:focus-visible{outline:2px solid var(--cyan);outline-offset:3px}
+input[type=text]{font:400 17px var(--body);background:transparent;color:var(--fg);border:0;border-bottom:1px solid var(--mute);padding:10px 0;width:100%;max-width:420px}
+input[type=text]:focus{outline:none;border-color:var(--cyan)}
+.slider{width:100%;max-width:560px;accent-color:var(--pink);height:28px}
+.chip{font:300 11px/1 var(--wide);letter-spacing:.1em;text-transform:uppercase;border:1px solid var(--rule);padding:8px 10px;color:var(--fg);display:inline-block}
+.chip.w{border-color:var(--pink);color:var(--pink)}.chip.c{border-color:var(--cyan);color:var(--cyan)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.seg{display:flex;flex-wrap:wrap;gap:0}
+.seg button{background:transparent;color:var(--mute);border:1px solid var(--rule);font:300 11px/1 var(--wide);letter-spacing:.12em;padding:11px 14px}
+.seg button.sel{color:var(--bg);background:var(--fg);border-color:var(--fg)}
+.seg button:hover{border-color:var(--fg)}
+
+/* главная */
+.hero{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:40px;align-items:center}
+.hero .art{position:relative;min-width:0}
+.hero .art img{display:block;width:100%;height:auto}
+.three{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border:1px solid var(--rule)}
+.three>div{padding:22px 20px;display:flex;flex-direction:column;gap:10px;min-width:0;border-right:1px solid var(--rule)}
+.three>div:last-child{border-right:0}
+.three b{font:600 24px/1 var(--display);text-transform:uppercase}
+.three .lab b{font:inherit}
+.three.t3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.pkband{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:24px;align-items:center;border:1px solid var(--pink);padding:24px}
+.agg{display:flex;flex-wrap:wrap;gap:8px 22px;font:300 11px/1.3 var(--wide);letter-spacing:.14em;text-transform:uppercase;color:var(--mute)}
+.agg i{display:inline-block;width:7px;height:7px;background:var(--cyan);margin-right:8px;vertical-align:1px}
+
+/* игра */
+.game{display:flex;flex-direction:column;gap:20px;max-width:880px}
+.turn{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.dots{display:flex;gap:6px}.dots i{width:42px;height:4px;background:var(--rule)}.dots i.on{background:var(--cyan)}
+.q{font:600 clamp(28px,4.4vw,48px)/1 var(--display);text-transform:uppercase;text-wrap:balance}
+.got{border-left:2px solid var(--cyan);padding:4px 0 4px 14px;display:flex;flex-direction:column;gap:4px;min-height:58px}
+.got .lab{color:var(--cyan)}
+.padwrap{display:grid;grid-template-columns:minmax(0,520px) minmax(0,1fr);gap:28px;align-items:start}
+.pad{position:relative;width:100%;aspect-ratio:1/1;max-width:100%;touch-action:none;cursor:crosshair;user-select:none;-webkit-user-select:none}
+.pad canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.pad .h,.pad .v{position:absolute;background:var(--fg);pointer-events:none;mix-blend-mode:difference}
+.pad .h{left:0;right:0;height:1px}.pad .v{top:0;bottom:0;width:1px}
+.pad .m{position:absolute;width:22px;height:22px;margin:-11px 0 0 -11px;border:2px solid var(--fg);background:var(--bg);pointer-events:none;box-shadow:-3px 0 0 var(--red),3px 0 0 var(--cyan)}
+.pad .e{position:absolute;font:300 10px/1 var(--wide);letter-spacing:.16em;text-transform:uppercase;color:var(--fg);background:var(--bg);padding:5px 6px;pointer-events:none}
+.pad .e.l{left:0;top:50%;transform:translateY(-50%)}.pad .e.r{right:0;top:50%;transform:translateY(-50%)}
+.pad .e.t{top:0;left:50%;transform:translateX(-50%)}.pad .e.b{bottom:0;left:50%;transform:translateX(-50%)}
+.wx{font:700 clamp(54px,8vw,104px)/.9 var(--display);text-transform:uppercase;text-shadow:-3px 0 var(--red),3px 0 var(--cyan);word-break:break-word}
+.board{display:grid;grid-template-columns:minmax(0,440px) minmax(0,1fr);gap:28px;align-items:start}
+.board canvas{width:100%;height:auto;display:block;background:var(--bg)}
+.opts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.opt{padding:0;background:var(--bg);border:1px solid var(--rule);display:block}
+.opt:hover{background:var(--bg);border-color:var(--fg)}
+.opt.sel{border-color:var(--cyan);box-shadow:0 0 0 2px var(--cyan)}
+.opt canvas{display:block;width:100%;height:auto}
+.cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;max-width:760px}
+.card{padding:0;background:var(--bg);border:1px solid var(--rule);display:flex;flex-direction:column;gap:0;align-items:stretch;text-align:left;color:var(--fg);transition:transform .2s}
+.card:hover{background:var(--bg);border-color:var(--fg)}
+.card img{display:block;width:100%;height:auto}
+.card span{font:italic 400 19px/1.2 var(--serif);text-transform:none;letter-spacing:0;padding:12px 12px 14px}
+.card.sel{border-color:var(--pink);box-shadow:0 0 0 2px var(--pink);transform:translateY(-6px)}
+.card.dim{opacity:.45}
+.phrase{font:italic 400 clamp(26px,3.4vw,40px)/1.1 var(--serif)}
+.ends{display:flex;justify-content:space-between;gap:16px;max-width:560px;font:300 11px/1.3 var(--wide);letter-spacing:.12em;text-transform:uppercase;color:var(--mute)}
+.ends span:last-child{text-align:right}
+.shuffle{min-height:50vh;display:grid;place-items:center;font:700 clamp(40px,7vw,90px)/1 var(--display);text-transform:uppercase}
+
+/* путь */
+.pathgrid{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:44px;align-items:start}
+.cardimg{width:100%;height:auto;display:block;background:var(--panel);aspect-ratio:2/3}
+.reads{display:grid;grid-template-columns:minmax(0,1fr);border:1px solid var(--rule)}
+.reads>div{display:grid;grid-template-columns:110px minmax(0,1fr) minmax(0,1.3fr);gap:14px;padding:14px 16px;border-bottom:1px solid var(--rule);align-items:baseline}
+.reads>div:last-child{border-bottom:0}
+.reads b{font:600 18px/1.1 var(--display);text-transform:uppercase}
+details summary{cursor:pointer;font:300 11px/1.3 var(--wide);letter-spacing:.14em;text-transform:uppercase;color:var(--fg)}
+.axes{display:flex;flex-direction:column;gap:10px;margin-top:14px}
+.ax{display:grid;grid-template-columns:100px minmax(0,1fr) 100px;gap:10px;align-items:center;font:300 10px/1.2 var(--wide);letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
+.ax span:last-child{text-align:right}
+.ax .t{position:relative;height:16px;border-bottom:1px solid var(--rule)}
+.ax .t b{position:absolute;bottom:-5px;transform:translateX(-50%);background:var(--cyan)}
+.ax .t b.o2{background:var(--pink)}.ax .t b.o3{background:var(--fg)}.ax .t b.o4{background:var(--violet)}
+
+/* остановки */
+.stops{display:flex;flex-direction:column;border-top:1px solid var(--rule)}
+.stop{display:grid;grid-template-columns:48px 150px minmax(0,1fr);gap:22px;padding:22px 0;border-bottom:1px solid var(--rule);align-items:start}
+.stop .n{font:700 34px/1 var(--display);color:var(--mute)}
+.stop .tx{display:flex;flex-direction:column;gap:8px;min-width:0}
+.stop h3 button,.thumb{all:unset;cursor:pointer;font:inherit;text-transform:inherit;display:block}
+.thumb:focus-visible{outline:2px solid var(--cyan);outline-offset:3px}
+.stop h3 button:hover{color:var(--cyan)}
+.stop h3 button:focus-visible{outline:2px solid var(--cyan);outline-offset:3px}
+.whys{display:flex;flex-direction:column;gap:4px;font-size:15px}
+.whys span b{font:300 10px/1 var(--wide);letter-spacing:.12em;text-transform:uppercase;color:var(--cyan);margin-right:8px}
+.pct{font:500 13px/1 var(--wide);letter-spacing:.06em;color:var(--fg)}
+.frag{position:relative;display:block;width:100%;aspect-ratio:1/1;max-width:100%;overflow:hidden;background:var(--panel)}
+.frag img{position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:cover}
+.frag .ph{position:absolute;left:0;bottom:0;font:300 9px/1 var(--wide);letter-spacing:.12em;text-transform:uppercase;background:var(--bg);color:var(--mute);padding:5px 6px}
+.pk{font:300 10px/1.2 var(--wide);letter-spacing:.12em;text-transform:uppercase;color:var(--pink);display:inline-flex;align-items:center;gap:7px}
+.pk i{width:9px;height:9px;background:var(--pink);display:inline-block}
+.note{border:1px solid var(--pink);padding:16px 18px;display:flex;flex-direction:column;gap:6px}
+.filters{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+
+/* выставка, билет, приглашение, аудиогид */
+.ex{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:44px;align-items:start}
+.ex h2{font-size:clamp(30px,3.8vw,50px);line-height:.95}
+.why{border:1px solid var(--rule);padding:18px;display:flex;flex-direction:column;gap:10px}
+.days{display:flex;flex-wrap:wrap;gap:8px}
+.days button{background:transparent;color:var(--fg);border:1px solid var(--rule);font:500 14px/1 var(--body);text-transform:none;letter-spacing:0;padding:11px 12px}
+.days button.sel{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.qty{display:flex;align-items:center;gap:14px}
+.reward{border:1px solid var(--cyan);padding:20px;display:flex;flex-direction:column;gap:10px}
+.gift{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:44px;align-items:start}
+.gift img{width:100%;height:auto;display:block;background:var(--panel)}
+.guide{display:flex;flex-direction:column;border-top:1px solid var(--rule)}
+.trk{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:14px;align-items:center;padding:12px 0;border-bottom:1px solid var(--rule)}
+.trk.on .nm{color:var(--cyan)}
+.trk .play{padding:10px 13px}
+.prog{height:2px;background:var(--rule);margin-top:8px}.prog i{display:block;height:100%;width:0;background:var(--cyan)}
+.lyr{font:italic 400 21px/1.35 var(--serif);padding:16px 0}
+.share{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:20px;align-items:center;border:1px solid var(--rule);padding:18px}
+.qr{background:#FFFFFF;padding:8px;width:146px;min-height:146px;display:grid;place-items:center}
+.wins{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;max-width:760px}
+.win{padding:0;background:var(--bg);border:1px solid var(--rule);display:flex;flex-direction:column;align-items:stretch;gap:0;color:var(--mute)}
+.win:hover{background:var(--bg);border-color:var(--fg)}
+.win>span:last-child{font:300 10px/1 var(--wide);letter-spacing:.14em;padding:10px}
+
+/* как это работает */
+.how{display:flex;flex-direction:column;gap:56px;max-width:1180px}
+.flow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0}
+.flow>div{position:relative;background:var(--panel);border:1px solid var(--rule);padding:18px 18px 20px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.flow>div+div{border-left:0}
+.flow>div:not(:last-child)::after{content:"→";position:absolute;right:-12px;top:16px;z-index:1;font:600 20px/1 var(--display);color:var(--cyan);background:var(--bg);padding:2px 3px}
+.flow .lab{color:var(--cyan)}
+.flow b{font:600 20px/1.05 var(--display);text-transform:uppercase}
+.flow .you{border-top:1px dashed var(--rule);padding-top:8px;margin-top:auto;font-size:14px;color:var(--pink)}
+.move{display:flex;flex-direction:column;gap:14px}
+.move h3 small{font:300 11px/1 var(--wide);letter-spacing:.14em;color:var(--mute);margin-left:10px;vertical-align:middle}
+.formula{font:500 15px/1.7 var(--wide);letter-spacing:.02em;border:1px solid var(--rule);padding:18px;overflow-x:auto}
+.cols2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:28px}
+.lit{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:8px;font-size:15px}
+.lit li::marker{font:600 13px var(--display);color:var(--cyan)}
+footer{border-top:1px solid var(--rule);padding-top:22px;display:flex;flex-direction:column;gap:10px;color:var(--mute);font-size:14px}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);font:600 14px/1 var(--display);letter-spacing:.08em;text-transform:uppercase;padding:12px 16px;z-index:20}
+
+@media (max-width:900px){
+  .hero,.pathgrid,.ex,.gift,.padwrap,.board,.cols2{grid-template-columns:minmax(0,1fr)}
+  .three{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .three>div:nth-child(2){border-right:0}
+  .three>div:nth-child(-n+2){border-bottom:1px solid var(--rule)}
+  .three.t3{grid-template-columns:minmax(0,1fr)}
+  .three.t3>div{border-right:0;border-bottom:1px solid var(--rule)}
+  .three.t3>div:last-child{border-bottom:0}
+  .flow{grid-template-columns:minmax(0,1fr)}
+  .flow>div+div{border-left:1px solid var(--rule);border-top:0}
+  .flow>div:not(:last-child)::after{content:"↓";right:auto;left:18px;top:auto;bottom:-13px}
+  .flow>div{padding-bottom:24px}
+  .pkband{grid-template-columns:minmax(0,1fr)}
+  .stop{grid-template-columns:96px minmax(0,1fr);gap:16px}
+  .stop .n{display:none}
+  .stop .frag .ph{display:none}
+  header.top{position:static}
+  .share{grid-template-columns:minmax(0,1fr)}
+  .reads>div{grid-template-columns:minmax(0,1fr);gap:4px}
+  main.wrap{gap:56px;padding-top:28px}
+}
+@media (max-width:520px){
+  nav#nav{flex-wrap:wrap;overflow:visible;flex-basis:100%;gap:2px 16px}
+  .three{grid-template-columns:minmax(0,1fr)}
+  .three>div{border-right:0;border-bottom:1px solid var(--rule)}
+  .three>div:last-child{border-bottom:0}
+  .opts,.cards,.wins{gap:8px}
+  .card span{font-size:15px;padding:8px}
+  .ax{grid-template-columns:70px minmax(0,1fr) 70px}
+  .dots i{width:26px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<header class="top"><div class="hd">
+  <button class="logo" id="logo" aria-label="На главную">OBRAZ</button>
+  <nav id="nav" aria-label="Разделы">
+    <button data-s="home">Путеводитель</button><button data-s="play">Игра</button><button data-s="path">Мой путь</button><button data-s="stops">Остановки</button><button data-s="together">Вместе</button><button data-s="how">Как это работает</button>
+  </nav>
+  <button class="pkt" id="pkt" aria-pressed="false" title="Показывать только выставки, которые можно оплатить Пушкинской картой"><i></i>Пушкинская карта</button>
+</div></header>
+<main class="wrap" id="app"></main>
+<script>
+/* ======================= данные ======================= */
+// 7 визуальных осей (формула Алёны): цвет (температура, яркость, светлота), форма, плотность, симметрия, настроение
+const AX=[
+ {k:'temp',lo:'холодный',hi:'тёплый',loP:'холодные цвета',hiP:'тёплые цвета'},
+ {k:'sat',lo:'приглушённый',hi:'яркий',loP:'приглушённый цвет',hiP:'яркий цвет'},
+ {k:'light',lo:'тёмный',hi:'светлый',loP:'тёмные тона',hiP:'светлые тона'},
+ {k:'form',lo:'угловатый',hi:'округлый',loP:'острые формы',hiP:'мягкие формы'},
+ {k:'dens',lo:'минимализм',hi:'плотность',loP:'минимализм и воздух',hiP:'плотные композиции'},
+ {k:'sym',lo:'асимметрия',hi:'симметрия',loP:'свободная асимметрия',hiP:'симметрия и порядок'},
+ {k:'dyn',lo:'покой',hi:'движение',loP:'спокойствие',hiP:'движение'}];
+const D=AX.length, TODAY=new Date('2026-10-16'), MAXP=5;
+const ARTIFACT_URL='https://claude.ai/artifact/NipRnLExTue3C8t28o6yb6';
+// Выставки Москвы, октябрь 2026 (по Яндекс Афише и сайтам площадок). В проекте этот список собирает агрегатор афиш.
+const EX=[
+ {id:'pastel',t:'Хрупкое искусство. Пастель из фондов графики XVIII — начала XX века',v:'Третьяковская галерея, Инженерный корпус',g:'tretyakov',d:'до 1 ноября',from:'2026-09-01',p:'от 500 ₽',x:[.4,-.5,.7,.7,-.2,.3,-.6],
+  feel:'свет, который можно потрогать: пастель будто осела пыльцой на бумаге',about:'Пастель из фондов отдела графики: портреты, пейзажи, этюды. Мягкий пигмент, бархатная поверхность, свет внутри цвета.',
+  look:['обратите внимание, как пастель держит свет: самые светлые места оставлены бумагой','найдите портрет, где цвет лица собран из холодных и тёплых штрихов','отойдите на два шага: размытые края собираются в форму']},
+ {id:'musatov',t:'Виктор Борисов-Мусатов. Гармония образа',v:'Третьяковская галерея, Кадашёвская наб.',g:'tretyakov',d:'октябрь',from:'2026-09-01',p:'от 500 ₽',x:[-.4,-.4,.3,.8,.1,.2,-.5],
+  feel:'вечер в старом саду, где всё выцвело до голубого и жемчужного',about:'Живопись Борисова-Мусатова: усадебные сцены, голубые и зелёные тона, плавные силуэты, ощущение сна.',
+  look:['заметьте, как цвет почти выцветает: голубой, серо-зелёный, жемчужный','фигуры повторяют изгибы деревьев и прудов, формы перетекают друг в друга','постойте у одной работы подольше: движение в ней очень медленное']},
+ {id:'kuzmin',t:'Николай Кузьмин. Графика',v:'Новая Третьяковка, Крымский Вал, 10',g:'tretyakov',d:'до 14 ноября',from:'2026-05-28',p:'от 500 ₽',x:[.1,-.6,.8,.2,-.7,-.2,.1],
+  feel:'город столетней давности, нарисованный на одном дыхании, с белым листом вместо воздуха',about:'Акварели, книжные иллюстрации и московские улицы столетней давности. Тонкая линия, много белого листа.',
+  look:['посмотрите, сколько места занимает пустой лист: он работает как воздух','линия здесь быстрая и лёгкая, без исправлений','сравните иллюстрации с городскими листами: где линии больше, где цвета']},
+ {id:'xx',t:'Искусство XX века',v:'Новая Третьяковка, Крымский Вал, 10',g:'tretyakov',d:'постоянная экспозиция',from:'2020-01-01',p:'от 500 ₽',x:[.3,.8,.1,-.7,.4,-.4,.8],
+  feel:'залы, где форма впервые ломается и спорит с цветом',about:'Авангард и искусство XX века: Малевич, Гончарова, Попова, Родченко. Чистый цвет, острые формы, диагонали.',
+  look:['начните с зала авангарда: красный, чёрный и белый спорят друг с другом','ищите диагонали, они дают ощущение рывка','сравните «Чёрный квадрат» с соседними работами: тишина против шума']},
+ {id:'impr',t:'От импрессионизма до авангарда',v:'ГМИИ им. А. С. Пушкина, Волхонка, 14',g:'pushkin',d:'до 25 октября',from:'2026-07-21',p:'от 300 ₽',x:[.5,.6,.4,.1,.3,-.3,.5],
+  feel:'прогулка от дрожащего света Моне к острым плоскостям авангарда',about:'Европейское искусство от Моне до Пикассо: мазок, свет, яркий цвет, постепенный распад формы.',
+  look:['следите, как от зала к залу мазок становится крупнее, а форма проще','у Моне цвет дрожит, у Матисса он стоит плоско и звонко','в конце маршрута форма уже собрана из углов и плоскостей']},
+ {id:'star',t:'Молчание звезды',v:'ММОМА, Гоголевский бульвар, 10',g:'mmoma',d:'до 1 ноября',from:'2026-08-26',p:'от 500 ₽',x:[-.6,-.3,-.6,.2,-.5,.1,-.3],
+  feel:'пауза и темнота, в которой слышно собственные мысли',about:'Около 70 работ молодых художников и признанных мастеров, в том числе графика. Тихая выставка о паузе и темноте.',
+  look:['здесь много тёмного и пустого пространства, дайте глазам привыкнуть','обратите внимание на свет в залах: он часть работ','выберите одну работу и попробуйте услышать в ней тишину']},
+ {id:'phen',t:'Феномены. Современная московская живопись и пересборка реального',v:'ММОМА',g:'mmoma',d:'до 28 марта 2027',from:'2026-04-16',p:'от 500 ₽',x:[.2,.6,0,-.2,.7,-.6,.6],
+  feel:'город, экран и шум, собранные в плотную живопись',about:'Одиннадцать живописцев поколения 2000-х. Плотная, яркая живопись, город и экран, разорванные композиции.',
+  look:['композиции здесь собраны как экран телефона: много слоёв сразу','ищите, где художник оставил тихое место среди шума','сравните двух соседних авторов: у кого цвет громче']},
+ {id:'ludwig',t:'Шедевры искусства второй половины XX века. Дар Петера и Ирене Людвиг',v:'Русский музей в ЗИЛАРТе',g:'zilart',d:'до 7 февраля 2027',from:'2026-09-05',p:'от 400 ₽',x:[.1,.7,.3,-.4,.2,-.2,.4],
+  feel:'ирония, реклама и плоский звонкий цвет второй половины века',about:'Поп-арт и искусство второй половины XX века из коллекции Людвигов: Уорхол, Лихтенштейн, советский нонконформизм.',
+  look:['поп-арт говорит языком рекламы: плоский цвет, контур, повтор','найдите работы, где форма собрана из точек или полос','сравните западный поп-арт и советский нонконформизм: где больше иронии']},
+ {id:'dali',t:'Сальвадор Дали и Пабло Пикассо',v:'Музей «Дали и Пикассо»',g:'dali',d:'до 24 января',from:'2026-02-01',p:'от 800 ₽',x:[.4,.3,0,.3,.4,-.7,.7],
+  feel:'два сна: в одном формы плавятся, в другом ломаются',about:'Графика двух мастеров: сюрреалистические сюжеты Дали и ломаные формы Пикассо.',
+  look:['у Дали формы плавятся и тянутся, у Пикассо ломаются','посмотрите, как по-разному двое рисуют одно лицо','графика показывает руку художника лучше живописи, ищите быстрые линии']},
+ {id:'inside',t:'Внутри шедевра',v:'Центр «Марс»',g:'mars',d:'до 31 октября',from:'2026-10-01',p:'от 900 ₽',x:[.2,.9,-.2,.5,.8,0,.9],
+  feel:'картина размером с комнату: цвет накрывает со всех сторон',about:'Иммерсивная выставка: картины проецируются на стены и пол, зритель оказывается внутри изображения.',
+  look:['встаньте в центр зала: изображение окружает со всех сторон','следите, как картина распадается на мазки при увеличении','сядьте на пол, проекция меняется и снизу выглядит иначе']},
+ {id:'dream',t:'Сон в музее',v:'Центр «Марс»',g:'mars',d:'до 31 октября',from:'2026-09-01',p:'от 900 ₽',x:[-.5,.2,-.8,.7,0,.3,-.4],
+  feel:'медленный свет в полутьме, похожий на засыпание',about:'Медленная медиавыставка в полутьме: мягкий свет, плавные формы, звук.',
+  look:['здесь важен темп: двигайтесь медленнее, чем обычно','свет появляется и исчезает плавно, как дыхание','попробуйте закрыть глаза на минуту и послушать звук зала']},
+ {id:'turtle',t:'Золотая черепаха',v:'Манеж, Манежная пл., 1',g:'manege',d:'октябрь — декабрь',from:'2026-10-01',p:'от 500 ₽',x:[.3,.5,.2,.6,.6,-.1,.3],
+  feel:'природа крупным планом: стаи, полосы, узоры, ритм',about:'Фестиваль фотографии дикой природы: животные, пейзажи, макросъёмка.',
+  look:['ищите кадры, где цвет природы ярче любой графики','обратите внимание на ритм: стаи, полосы, узоры','макросъёмка превращает насекомое в абстракцию']},
+ {id:'paris',t:'Русский Париж. 1814–1914',v:'Дом русского зарубежья им. Солженицына',g:'drz',d:'с 16 октября по 7 февраля',from:'2026-10-16',p:'от 300 ₽',x:[.5,-.2,.4,.3,.5,.5,-.3],
+  feel:'дневник длиной в век: письма, вещи, тёплая старая бумага',about:'Век русских в Париже: живопись, графика, письма, фотографии, предметы быта.',
+  look:['выставка устроена как дневник: смотрите вещи рядом с картинами','цвет здесь тёплый, приглушённый, как у старой бумаги','найдите афиши и обложки: это почти графический дизайн своего времени']},
+ {id:'shito',t:'Шито-вышито',v:'Всероссийский музей декоративного искусства',g:'vmdpni',d:'с 16 октября по 31 января',from:'2026-10-16',p:'от 400 ₽',x:[.6,.7,.4,.4,.9,.9,-.1],
+  feel:'тысячи стежков, которые складываются в зеркальный узор',about:'Вышивка и текстиль: орнамент, плотный узор, зеркальная симметрия, красный и золотой.',
+  look:['подойдите вплотную: орнамент собран из тысяч одинаковых стежков','почти каждый узор зеркален, ищите ось симметрии','красный здесь не один, найдите хотя бы три его оттенка']},
+];
+const LOOK={pastel:'pastel',musatov:'haze',kuzmin:'ink',xx:'planes',impr:'dabs',star:'night',phen:'brush',ludwig:'pop',dali:'flow',inside:'swirl',dream:'glow',turtle:'cells',paris:'sepia',shito:'stitch'};
+
+/* ======================= рисование: основа ======================= */
+function rng(s){return()=>{s|=0;s=s+0x6D2B79F5|0;let t=Math.imul(s^s>>>15,1|s);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const cl=(v,a,b)=>Math.max(a,Math.min(b,v));
+const hsl=(h,s,l,a=1)=>`hsla(${((h%360)+360)%360},${cl(s,0,100)}%,${cl(l,0,100)}%,${a})`;
+const hueOf=tp=>tp<0?280+tp*70:(280+Math.min(125,tp*250))%360;
+function palette(x){const [tp,sa,li]=x;return{h:hueOf(tp),s:12+(sa+1)/2*68,L:14+(li+1)/2*72}}
+const seedOf=id=>Math.abs([...String(id)].reduce((a,c)=>a*31+c.charCodeAt(0)|0,7));
+// основа фрагмента: живопись-плейсхолдер по характеру выставки (из v2)
+function fragBase(x,mode,seed){
+  const N=480,c=document.createElement('canvas');c.width=c.height=N;const g=c.getContext('2d'),r=rng(seed),P=palette(x);
+  const {h,s,L}=P,pick=a=>a[Math.floor(r()*a.length)];
+  const fill=col=>{g.fillStyle=col;g.fillRect(0,0,N,N)};
+  const stroke=(x0,y0,len,ang,w,col,curve=0)=>{g.strokeStyle=col;g.lineWidth=w;g.lineCap='round';g.beginPath();g.moveTo(x0,y0);
+    g.quadraticCurveTo(x0+Math.cos(ang+curve)*len/2,y0+Math.sin(ang+curve)*len/2,x0+Math.cos(ang)*len,y0+Math.sin(ang)*len);g.stroke()};
+  switch(mode){
+    case 'pastel':fill(hsl(h+20,s*.5,82));for(let i=0;i<700;i++)stroke(r()*N,r()*N,20+r()*50,-.9+r()*.5,6+r()*10,hsl(h+r()*80-40,s*.7,62+r()*28,.18+r()*.2),.3);break;
+    case 'haze':fill(hsl(190,22,58));for(let i=0;i<60;i++){const gr=g.createRadialGradient(r()*N,r()*N,0,r()*N,r()*N,60+r()*160);gr.addColorStop(0,hsl(pick([170,200,220,90]),25,55+r()*25,.5));gr.addColorStop(1,hsl(200,20,60,0));g.fillStyle=gr;g.fillRect(0,0,N,N)}break;
+    case 'ink':fill('#F3EFE4');g.strokeStyle='rgba(30,25,30,.85)';for(let k=0;k<26;k++){let px=r()*N,py=r()*N;g.lineWidth=.6+r()*1.2;g.beginPath();g.moveTo(px,py);for(let j=0;j<8;j++){px+=r()*60-30;py+=r()*50-25;g.lineTo(px,py)}g.stroke()}
+      for(let i=0;i<5;i++){g.fillStyle=hsl(pick([20,200,90]),40,60,.35);g.beginPath();g.ellipse(r()*N,r()*N,20+r()*50,10+r()*30,r()*3,0,7);g.fill()}break;
+    case 'planes':fill('#EFE9DC');for(let i=0;i<9;i++){g.save();g.translate(r()*N,r()*N);g.rotate(-.6+r()*.4);g.fillStyle=pick(['#C8302A','#111','#2B4AA0','#E2B22B','#111']);
+      r()<.2?(g.beginPath(),g.arc(0,0,20+r()*40,0,7),g.fill()):g.fillRect(-r()*120,-r()*30,40+r()*200,10+r()*50);g.restore()}break;
+    case 'dabs':fill(hsl(h,s*.6,L));for(let i=0;i<1400;i++){g.fillStyle=hsl(h+r()*140-70,s+10,L+r()*40-15,.75);g.save();g.translate(r()*N,r()*N);g.rotate(r()*3);g.fillRect(0,0,10+r()*12,4+r()*5);g.restore()}break;
+    case 'brush':fill(hsl(h+180,s,L));for(let i=0;i<90;i++)stroke(r()*N,r()*N,80+r()*240,r()*6.3,14+r()*40,hsl(h+r()*200-100,s+20,L+r()*40-20,.85),r()-.5);break;
+    case 'pop':fill(hsl(h+40,85,62));g.fillStyle=hsl(h-30,80,50);for(let y=0;y<N;y+=14)for(let x0=(y/14%2)*7;x0<N;x0+=14){const rr=2+5*(x0/N);g.beginPath();g.arc(x0,y,rr,0,7);g.fill()}
+      g.lineWidth=8;g.strokeStyle='#111';for(let i=0;i<4;i++){g.fillStyle=pick([hsl(200,80,55),'#F7E04B','#fff',hsl(350,85,55)]);const x0=r()*N*.7,y0=r()*N*.7,w=80+r()*160,h=40+r()*120;g.fillRect(x0,y0,w,h);g.strokeRect(x0,y0,w,h)}
+      g.fillStyle='#111';for(let i=0;i<6;i++)g.fillRect(r()*N,r()*N,6+r()*90,6);break;
+    case 'flow':fill(hsl(40,45,78));for(let i=0;i<14;i++){g.strokeStyle=hsl(pick([20,30,210,0]),40,20+r()*30,.85);g.lineWidth=1+r()*3;g.beginPath();g.moveTo(-20,r()*N);
+      g.bezierCurveTo(r()*N,r()*N,r()*N,r()*N,N+20,r()*N);g.stroke()}g.fillStyle=hsl(25,60,40,.8);g.beginPath();g.ellipse(N*.6,N*.55,60,110,.4,0,7);g.fill();break;
+    case 'swirl':fill(hsl(h,s,12));g.globalCompositeOperation='lighter';for(let i=0;i<260;i++){const a=r()*6.3,rad=r()*N*.6;stroke(N/2+Math.cos(a)*rad,N/2+Math.sin(a)*rad,30+r()*60,a+1.6,3+r()*8,hsl(h+r()*160-80,90,50,.35),.6)}break;
+    case 'night':fill('#0B0B14');for(let i=0;i<220;i++){g.fillStyle=`rgba(255,255,255,${r()*.8})`;g.fillRect(r()*N,r()*N,1.5,1.5)}{const gr=g.createRadialGradient(N*.35,N*.4,0,N*.35,N*.4,N*.5);gr.addColorStop(0,hsl(h,40,70,.6));gr.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=gr;g.fillRect(0,0,N,N)}break;
+    case 'glow':fill(hsl(h,40,8));g.globalCompositeOperation='lighter';for(let i=0;i<7;i++){const X=r()*N,Y=r()*N,gr=g.createRadialGradient(X,Y,0,X,Y,90+r()*160);gr.addColorStop(0,hsl(h+r()*80-40,70,55,.55));gr.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=gr;g.fillRect(0,0,N,N)}break;
+    case 'cells':fill(hsl(h,s,L-15));for(let i=0;i<160;i++){const X=r()*N,Y=r()*N,R=8+r()*38,gr=g.createRadialGradient(X-R/3,Y-R/3,1,X,Y,R);gr.addColorStop(0,hsl(h+r()*60,s+20,L+25));gr.addColorStop(1,hsl(h+r()*60-30,s,L-25));g.fillStyle=gr;g.beginPath();g.arc(X,Y,R,0,7);g.fill()}break;
+    case 'sepia':fill('#D9C7A4');for(let y=40;y<N;y+=26){g.fillStyle='rgba(80,55,30,.35)';g.fillRect(40+r()*20,y,180+r()*200,3)}g.strokeStyle='rgba(70,45,25,.8)';g.lineWidth=3;g.strokeRect(N*.55,N*.12,N*.35,N*.5);
+      g.fillStyle='rgba(120,80,45,.5)';g.fillRect(N*.57,N*.14,N*.31,N*.46);break;
+    case 'stitch':fill('#E8DFCC');{const cs=12,n=N/cs,half=n/2;const motif=[];for(let i=0;i<half;i++){motif[i]=[];for(let j=0;j<half;j++)motif[i][j]=r()<.35+.25*Math.sin(i*.9)*Math.cos(j*.9)?(r()<.7?0:1):-1}
+      for(let i=0;i<n;i++)for(let j=0;j<n;j++){const a=i<half?i:n-1-i,b=j<half?j:n-1-j,v=motif[a][b];if(v<0)continue;g.strokeStyle=v?'#C9A23A':'#B3262B';g.lineWidth=2.2;const X=j*cs,Y=i*cs;g.beginPath();g.moveTo(X+2,Y+2);g.lineTo(X+cs-2,Y+cs-2);g.moveTo(X+cs-2,Y+2);g.lineTo(X+2,Y+cs-2);g.stroke()}}break;
+  }
+  g.globalCompositeOperation='source-over';
+  const im=g.getImageData(0,0,N,N),d=im.data;for(let i=0;i<d.length;i+=4){const n=(r()-.5)*18;d[i]+=n;d[i+1]+=n;d[i+2]+=n}g.putImageData(im,0,0);
+  return c;
+}
+
+/* ======================= стиль из плакатов Алёны (копия /стиль/obraz-style.js) ======================= */
+/* Obraz · стиль из плакатов Алёны Якуповой.
+   Набор приёмов на canvas без библиотек: каждый приём — функция, которая меняет уже нарисованный холст.
+   Рецепты внизу собирают из приёмов плакаты целиком. */
+const OS = (() => {
+
+/* ---------- основа ---------- */
+const PAL = {
+  black: '#000000', ink: '#050505', white: '#FFFFFF',
+  // кислотная пара с плаката со штрихами
+  cyan: '#00E6DA', pink: '#F4C2E4', red: '#F5321E',
+  // глитч
+  magenta: '#F308F6', ultramarine: '#0408E5', acid: '#1DD510', aqua: '#24EEE2', yellow: '#E9D232', orange: '#DF9B22', crimson: '#D82D4E', lilac: '#E3D1EE',
+  // космос
+  night: '#06070B', dusk: '#1A1A32', plum: '#3C2045', violet: '#8734B6', lavender: '#A968C2', rose: '#B73382', mist: '#9CA5A0',
+  // волна
+  deep: '#123D44', teal: '#2E7C7B', sea: '#28DECC', foam: '#96E3DF', salmon: '#E39A7E'
+};
+const hex = h => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
+const lum = (r, g, b) => .299 * r + .587 * g + .114 * b;
+const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+function rnd(seed) { let a = seed >>> 0; return () => { a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function canvas(w, h) { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; }
+const size = ctx => [ctx.canvas.width, ctx.canvas.height];
+const pixels = ctx => ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
+
+// плавный шум и его «облака» (fbm)
+function noise(seed) {
+  const R = rnd(seed), P = new Uint8Array(512), G = new Float32Array(256);
+  for (let i = 0; i < 256; i++) { P[i] = i; G[i] = R(); }
+  for (let i = 255; i > 0; i--) { const j = (R() * (i + 1)) | 0; [P[i], P[j]] = [P[j], P[i]]; }
+  for (let i = 0; i < 256; i++) P[i + 256] = P[i];
+  const f = t => t * t * (3 - 2 * t);
+  return (x, y) => {
+    const xi = Math.floor(x), yi = Math.floor(y), u = f(x - xi), v = f(y - yi), X = xi & 255, Y = yi & 255;
+    const a = G[P[P[X] + Y]], b = G[P[P[X + 1] + Y]], c = G[P[P[X] + Y + 1]], d = G[P[P[X + 1] + Y + 1]];
+    return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
+  };
+}
+function fbm(n, x, y, oct = 5) { let s = 0, a = .5, f = 1, m = 0; for (let i = 0; i < oct; i++) { s += a * n(x * f, y * f); m += a; f *= 2.03; a *= .5; } return s / m; }
+
+/* ---------- приёмы ---------- */
+
+// 1. Однобитный дизеринг: только чёрное и белое, полутона превращаются в «червячки» и точки.
+// scale > 1 — крупный пиксель, как на плакате WOMAN.
+function dither(ctx, { algo = 'floyd', dark = PAL.black, light = PAL.white, threshold = 128, gamma = 1, scale = 1 } = {}) {
+  const [W, H] = size(ctx), w = Math.ceil(W / scale), h = Math.ceil(H / scale), t = canvas(w, h), g = t.getContext('2d');
+  g.imageSmoothingEnabled = true; g.drawImage(ctx.canvas, 0, 0, w, h);
+  const id = g.getImageData(0, 0, w, h), d = id.data, L = new Float32Array(w * h), D = hex(dark), Li = hex(light);
+  for (let i = 0; i < w * h; i++) L[i] = 255 * Math.pow(lum(d[i * 4], d[i * 4 + 1], d[i * 4 + 2]) / 255, gamma);
+  const K = algo === 'atkinson'
+    ? [[1, 0, 1 / 8], [2, 0, 1 / 8], [-1, 1, 1 / 8], [0, 1, 1 / 8], [1, 1, 1 / 8], [0, 2, 1 / 8]]
+    : [[1, 0, 7 / 16], [-1, 1, 3 / 16], [0, 1, 5 / 16], [1, 1, 1 / 16]];
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const i = y * w + x, o = L[i], n = o < threshold ? 0 : 255, e = o - n; L[i] = n;
+    for (const [dx, dy, k] of K) { const xx = x + dx, yy = y + dy; if (xx >= 0 && xx < w && yy < h) L[yy * w + xx] += e * k; }
+  }
+  for (let i = 0; i < w * h; i++) { const c = L[i] ? Li : D; d[i * 4] = c[0]; d[i * 4 + 1] = c[1]; d[i * 4 + 2] = c[2]; d[i * 4 + 3] = 255; }
+  g.putImageData(id, 0, 0);
+  ctx.save(); ctx.imageSmoothingEnabled = false; ctx.clearRect(0, 0, W, H); ctx.drawImage(t, 0, 0, W, H); ctx.restore();
+}
+
+// 2. Два цвета по порогу: тёмное → dark, светлое → light (кислотный постер).
+function duotone(ctx, { dark = PAL.black, light = PAL.cyan, threshold = 128, mask = null } = {}) {
+  const id = pixels(ctx), d = id.data, D = hex(dark), L = hex(light);
+  for (let i = 0; i < d.length; i += 4) { const c = lum(d[i], d[i + 1], d[i + 2]) < threshold ? D : L; d[i] = c[0]; d[i + 1] = c[1]; d[i + 2] = c[2]; }
+  ctx.putImageData(id, 0, 0);
+}
+
+// 3. Градиентная карта: яркость → палитра. bands > 0 даёт ступени, как при сжатии цвета в глитче.
+function gradientMap(ctx, stops, { bands = 0, alpha = 1 } = {}) {
+  const id = pixels(ctx), d = id.data, C = stops.map(hex), n = C.length - 1;
+  for (let i = 0; i < d.length; i += 4) {
+    let t = lum(d[i], d[i + 1], d[i + 2]) / 255; if (bands) t = Math.round(t * bands) / bands;
+    const k = Math.min(n - 1, Math.floor(t * n)), f = t * n - k, a = C[k], b = C[k + 1];
+    for (let c = 0; c < 3; c++) d[i + c] = d[i + c] * (1 - alpha) + (a[c] + (b[c] - a[c]) * f) * alpha;
+  }
+  ctx.putImageData(id, 0, 0);
+}
+
+// 4. Разведение каналов: красный уходит влево, синий вправо.
+function rgbSplit(ctx, { dx = 4, dy = 0 } = {}) {
+  const [w, h] = size(ctx), s = pixels(ctx), o = ctx.createImageData(w, h), a = s.data, b = o.data;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const i = (y * w + x) * 4, xr = clamp(x + dx, 0, w - 1), yr = clamp(y + dy, 0, h - 1), xb = clamp(x - dx, 0, w - 1), yb = clamp(y - dy, 0, h - 1);
+    b[i] = a[(yr * w + xr) * 4]; b[i + 1] = a[i + 1]; b[i + 2] = a[(yb * w + xb) * 4 + 2]; b[i + 3] = Math.max(a[i + 3], a[(yr * w + xr) * 4 + 3], a[(yb * w + xb) * 4 + 3]);
+  }
+  ctx.putImageData(o, 0, 0);
+}
+
+// 5. Нарезка на полосы со сдвигом (dir 'h' — горизонтальные полосы сдвигаются вбок).
+function slices(ctx, { n = 24, max = 40, prob = .55, dir = 'h', seed = 1 } = {}) {
+  const [w, h] = size(ctx), R = rnd(seed), src = canvas(w, h), g = src.getContext('2d'); g.drawImage(ctx.canvas, 0, 0);
+  const span = dir === 'h' ? h : w; let p = 0;
+  while (p < span) {
+    const t = Math.max(2, (R() ** 2) * span / n * 2.2), off = R() < prob ? (R() - .5) * 2 * max : 0;
+    if (off) {
+      if (dir === 'h') ctx.clearRect(0, p, w, t); else ctx.clearRect(p, 0, t, h);
+      if (dir === 'h') { ctx.drawImage(src, 0, p, w, t, off, p, w, t); ctx.drawImage(src, 0, p, w, t, off - Math.sign(off) * w, p, w, t); }
+      else { ctx.drawImage(src, p, 0, t, h, p, off, t, h); ctx.drawImage(src, p, 0, t, h, p, off - Math.sign(off) * h, t, h); }
+    }
+    p += t;
+  }
+}
+
+// 6. Растяжка пикселя: яркие горизонтальные «росчерки света», как на космическом плакате.
+function streaks(ctx, { count = 140, maxLen = 220, minH = 1, maxH = 4, alpha = .8, seed = 2, bright = true, dir = 'h', y0 = 0, y1 = 1 } = {}) {
+  const [w, h] = size(ctx), d = pixels(ctx).data, R = rnd(seed);
+  ctx.save(); ctx.globalCompositeOperation = 'lighter';
+  for (let k = 0; k < count; k++) {
+    let best = null, bl = -1;
+    for (let c = 0; c < (bright ? 6 : 1); c++) { const x = (R() * w) | 0, y = ((y0 + R() * (y1 - y0)) * h) | 0, i = (y * w + x) * 4, l = lum(d[i], d[i + 1], d[i + 2]); if (l > bl) { bl = l; best = [x, y, d[i], d[i + 1], d[i + 2]]; } }
+    const [x, y, r, g, b] = best, len = maxLen * (.2 + R() * .8), th = minH + R() * (maxH - minH), dirn = R() < .5 ? -1 : 1;
+    const gr = dir === 'h' ? ctx.createLinearGradient(x, 0, x + dirn * len, 0) : ctx.createLinearGradient(0, y, 0, y + len);
+    gr.addColorStop(0, `rgba(${r},${g},${b},${alpha})`); gr.addColorStop(1, `rgba(${r},${g},${b},0)`);
+    ctx.fillStyle = gr; if (dir === 'h') ctx.fillRect(Math.min(x, x + dirn * len), y, len, th); else ctx.fillRect(x, y, th, len);
+  }
+  ctx.restore();
+}
+
+// 7. Датамош: куски изображения переезжают, меняют каналы, пикселизуются и чередуют строки.
+function datamosh(ctx, { count = 40, maxW = .35, maxH = .12, seed = 3 } = {}) {
+  const [w, h] = size(ctx), R = rnd(seed);
+  for (let k = 0; k < count; k++) {
+    const bw = Math.max(4, (R() * maxW * w) | 0), bh = Math.max(2, (R() * maxH * h) | 0), x = (R() * (w - bw)) | 0, y = (R() * (h - bh)) | 0;
+    const id = ctx.getImageData(x, y, bw, bh), d = id.data, mode = R();
+    if (mode < .3) { for (let i = 0; i < d.length; i += 4) { const r = d[i]; d[i] = d[i + 2]; d[i + 2] = d[i + 1]; d[i + 1] = r; } } // меняем каналы местами
+    else if (mode < .5) { const c = 4 + ((R() * 10) | 0); for (let yy = 0; yy < bh; yy += c) for (let xx = 0; xx < bw; xx += c) { const i = (yy * bw + xx) * 4; for (let j = yy; j < Math.min(bh, yy + c); j++) for (let q = xx; q < Math.min(bw, xx + c); q++) { const o = (j * bw + q) * 4; d[o] = d[i]; d[o + 1] = d[i + 1]; d[o + 2] = d[i + 2]; } } } // крупные блоки
+    else if (mode < .7) { const s = 2 + ((R() * 12) | 0); for (let j = 0; j < bh; j += 2) { const row = d.slice(j * bw * 4, (j + 1) * bw * 4); for (let q = 0; q < bw; q++) { const src = ((q + s) % bw) * 4, o = (j * bw + q) * 4; d[o] = row[src]; d[o + 1] = row[src + 1]; d[o + 2] = row[src + 2]; } } } // чересстрочность
+    else { for (let i = 0; i < d.length; i += 4) { d[i] = 255 - d[i]; d[i + 1] = d[i + 1] ^ 0x5A; } } // инверсия с порчей канала
+    ctx.putImageData(id, clamp(x + ((R() - .5) * bw * .6) | 0, 0, w - bw), y);
+  }
+}
+
+// 8. Полутоновый растр: точки цвета самого изображения, размер — по яркости.
+function halftone(ctx, { cell = 8, angle = 30, mix = 1, gain = 1.2, bg = null, color = null, invert = false } = {}) {
+  const [w, h] = size(ctx), s = pixels(ctx).data, out = canvas(w, h), g = out.getContext('2d');
+  if (bg) { g.fillStyle = bg; g.fillRect(0, 0, w, h); } else g.drawImage(ctx.canvas, 0, 0);
+  const a = angle * Math.PI / 180, ca = Math.cos(a), sa = Math.sin(a), R = Math.hypot(w, h) / 2 + cell;
+  for (let v = -R; v <= R; v += cell) for (let u = -R; u <= R; u += cell) {
+    const x = w / 2 + u * ca - v * sa, y = h / 2 + u * sa + v * ca; if (x < 0 || y < 0 || x >= w || y >= h) continue;
+    const i = ((y | 0) * w + (x | 0)) * 4, l = lum(s[i], s[i + 1], s[i + 2]) / 255, r = cell / 2 * gain * Math.sqrt(invert ? 1 - l : l);
+    if (r < .35) continue;
+    g.fillStyle = color || `rgb(${Math.min(255, s[i] * 1.25)},${Math.min(255, s[i + 1] * 1.25)},${Math.min(255, s[i + 2] * 1.25)})`;
+    g.beginPath(); g.arc(x, y, r, 0, 6.3); g.fill();
+  }
+  ctx.save(); ctx.globalAlpha = mix; ctx.drawImage(out, 0, 0); ctx.restore();
+}
+
+// 9. Муар: тонкие концентрические кольца из нескольких центров.
+function moire(ctx, { centers = [[.5, .5]], step = 7, lw = 1, color = PAL.white, alpha = .7, squash = 1 } = {}) {
+  const [w, h] = size(ctx), R = Math.hypot(w, h);
+  ctx.save(); ctx.strokeStyle = color; ctx.lineWidth = lw; ctx.globalAlpha = alpha;
+  for (const [cx, cy] of centers) for (let r = step; r < R; r += step) { ctx.beginPath(); ctx.ellipse(cx * w, cy * h, r, r * squash, 0, 0, 6.3); ctx.stroke(); }
+  ctx.restore();
+}
+
+// 10. Жидкая деформация: волна + шум + закрутка (как «Пластика» в фотошопе).
+function warp(ctx, { amp = 18, freq = .02, noiseAmp = 0, noiseFreq = .008, twirl = 0, seed = 4 } = {}) {
+  const [w, h] = size(ctx), s = pixels(ctx), o = ctx.createImageData(w, h), a = s.data, b = o.data, n = noise(seed), cx = w / 2, cy = h / 2, RR = Math.min(w, h) * .6;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    let u = x + amp * Math.sin(y * freq + Math.sin(x * freq * .7) * 2), v = y + amp * Math.cos(x * freq * 1.3 + Math.sin(y * freq * .5) * 2);
+    if (noiseAmp) { u += noiseAmp * (fbm(n, x * noiseFreq, y * noiseFreq, 3) - .5); v += noiseAmp * (fbm(n, x * noiseFreq + 31, y * noiseFreq + 17, 3) - .5); }
+    if (twirl) { const dx = u - cx, dy = v - cy, r = Math.hypot(dx, dy), t = Math.max(0, 1 - r / RR) ** 2 * twirl, c = Math.cos(t), si = Math.sin(t); u = cx + dx * c - dy * si; v = cy + dx * si + dy * c; }
+    const i = (y * w + x) * 4, j = (clamp(v | 0, 0, h - 1) * w + clamp(u | 0, 0, w - 1)) * 4;
+    b[i] = a[j]; b[i + 1] = a[j + 1]; b[i + 2] = a[j + 2]; b[i + 3] = 255;
+  }
+  ctx.putImageData(o, 0, 0);
+}
+
+// 11. Узор из буквы: ряды одного знака как текстура.
+function typePattern(ctx, { glyph = 'Ф', font = '700 34px "Playfair Display"', color = PAL.black, bg = PAL.white, sx = 34, sy = 30, shift = .5 } = {}) {
+  const [w, h] = size(ctx);
+  ctx.save(); ctx.fillStyle = bg; ctx.fillRect(0, 0, w, h); ctx.fillStyle = color; ctx.font = font; ctx.textBaseline = 'middle'; ctx.textAlign = 'center';
+  for (let r = 0, y = 0; y < h + sy; r++, y += sy) for (let x = (r % 2) * sx * shift - sx; x < w + sx; x += sx) ctx.fillText(glyph, x, y);
+  ctx.restore();
+}
+
+// 12. Штрих мелком: зигзаг из заострённых «лезвий» с рваным зернистым краем.
+function blade(ctx, a, b, wd, R, grain = 1) {
+  const dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy) || 1, nx = -dy / L, ny = dx / L, N = 28, left = [], right = [];
+  for (let k = 0; k <= N; k++) {
+    const t = k / N, wt = wd * Math.pow(Math.sin(Math.PI * t), .55) / 2 * (1 + (R() - .5) * .3 * grain), cx = a[0] + dx * t, cy = a[1] + dy * t;
+    left.push([cx + nx * wt, cy + ny * wt]); right.push([cx - nx * wt, cy - ny * wt]);
+  }
+  ctx.beginPath(); ctx.moveTo(left[0][0], left[0][1]); for (const p of left) ctx.lineTo(p[0], p[1]); for (const p of right.reverse()) ctx.lineTo(p[0], p[1]); ctx.closePath(); ctx.fill();
+  if (grain) for (let k = 0; k < L * 1.6 * grain; k++) { // зерно по краю, как у мелка
+    const t = R(), wt = wd * Math.pow(Math.sin(Math.PI * t), .55) / 2, side = R() < .5 ? 1 : -1, off = wt + (R() - .35) * 5;
+    ctx.fillRect(a[0] + dx * t + nx * off * side, a[1] + dy * t + ny * off * side, 1.3, 1.3);
+  }
+}
+function scribble(ctx, { x, y, len = 300, angle = -1.05, legs = 9, spacing = 26, width = 34, color = PAL.pink, seed = 5, grain = 1 } = {}) {
+  const R = rnd(seed), ux = Math.cos(angle), uy = Math.sin(angle), px = -uy, py = ux, pts = [];
+  for (let i = 0; i <= legs; i++) { const along = i % 2 ? len * (.7 + R() * .3) : len * R() * .15, across = i * spacing + (R() - .5) * spacing * .5; pts.push([x + ux * along + px * across, y + uy * along + py * across]); }
+  ctx.save(); ctx.fillStyle = color;
+  for (let i = 0; i < pts.length - 1; i++) blade(ctx, pts[i], pts[i + 1], width * (.55 + R() * .7), R, grain);
+  ctx.restore();
+}
+
+// 13. Падающие буквы: строка теряет буквы, и они осыпаются вниз, растут и сваливаются в кучу.
+function fallingType(ctx, { line = 'Reflexions enjeu', drop = [6, 13], extras = '&&&éoe’as&fiPAtde', pileGlyphs = '&APt&', serif = 'Playfair Display', seed = 6, ink = PAL.black, paper = PAL.white } = {}) {
+  const [w, h] = size(ctx), R = rnd(seed);
+  ctx.save(); ctx.fillStyle = paper; ctx.fillRect(0, 0, w, h);
+  ctx.fillStyle = ink; ctx.textBaseline = 'alphabetic'; ctx.font = `italic 400 ${w * .085}px "${serif}"`;
+  let x = w * .04; const fallen = [];
+  [...line].forEach((ch, i) => { const cw = ctx.measureText(ch).width; if (drop.includes(i)) fallen.push(ch); else ctx.fillText(ch, x, h * .085); x += cw; });
+  const glyphs = [...fallen, ...extras], N = glyphs.length + 4;
+  for (let k = 0; k < N; k++) {
+    const ch = glyphs[k % glyphs.length], t = Math.pow((k + R() * .8) / N, .8), s = w * (.03 + Math.pow(t, 3) * .26);
+    const gx = w * (R() * 1.05 - .08), gy = h * (.16 + t * .7), rot = (R() - .5) * (1.2 - t * .4);
+    ctx.save(); ctx.translate(gx, gy); ctx.rotate(rot);
+    ctx.font = `${R() < .65 ? 'italic ' : ''}${R() < .3 ? 700 : 400} ${s}px "${serif}"`;
+    ctx.lineWidth = Math.max(2, s * .045); ctx.strokeStyle = paper; ctx.strokeText(ch, 0, 0); ctx.fillText(ch, 0, 0);
+    ctx.restore();
+  }
+  // куча внизу: несколько огромных знаков, обрезанных краями листа
+  const pile = (pileGlyphs || '&APt&').split('');
+  pile.forEach((ch, k) => {
+    const s = w * (.42 + R() * .38), gx = w * (-.15 + (k / (pile.length - 1 || 1)) * .95 + (R() - .5) * .1), gy = h * (.9 + R() * .14);
+    ctx.save(); ctx.translate(gx, gy); ctx.rotate((R() - .5) * .7);
+    ctx.font = `${R() < .5 ? 'italic ' : ''}${R() < .4 ? 700 : 400} ${s}px "${serif}"`;
+    ctx.lineWidth = s * .03; ctx.strokeStyle = paper; ctx.strokeText(ch, 0, 0); ctx.fillText(ch, 0, 0); ctx.restore();
+  });
+  ctx.restore();
+}
+
+// 14. Шум плёнки.
+function grain(ctx, { amt = 18, seed = 7 } = {}) {
+  const id = pixels(ctx), d = id.data, R = rnd(seed);
+  for (let i = 0; i < d.length; i += 4) { const n = (R() - .5) * amt; d[i] = clamp(d[i] + n, 0, 255); d[i + 1] = clamp(d[i + 1] + n, 0, 255); d[i + 2] = clamp(d[i + 2] + n, 0, 255); }
+  ctx.putImageData(id, 0, 0);
+}
+
+// 15. Шахматные заплатки растра (плакат с волной).
+function checkers(ctx, { count = 10, cell = 5, colors = [PAL.salmon, PAL.crimson], alpha = .55, seed = 8 } = {}) {
+  const [w, h] = size(ctx), R = rnd(seed);
+  ctx.save(); ctx.globalAlpha = alpha;
+  for (let k = 0; k < count; k++) {
+    const bw = 30 + R() * w * .25, bh = 20 + R() * h * .1, x = R() * (w - bw), y = R() * (h - bh), c = colors[(R() * colors.length) | 0];
+    ctx.fillStyle = c;
+    for (let yy = 0; yy < bh; yy += cell) for (let xx = ((yy / cell) % 2) * cell; xx < bw; xx += cell * 2) ctx.fillRect(x + xx, y + yy, cell, cell);
+  }
+  ctx.restore();
+}
+
+// большой текст, растянутый на заданный прямоугольник (повёрнутые буквы на всю высоту)
+function fitText(ctx, text, { font = '"Montserrat"', weight = 900, x = 0, y = 0, w, h, rotate = 0, fill = PAL.white, alpha = 1, op = 'source-over' } = {}) {
+  ctx.save(); ctx.globalAlpha = alpha; ctx.globalCompositeOperation = op; ctx.fillStyle = fill;
+  ctx.font = `${weight} 200px ${font}`; ctx.textBaseline = 'alphabetic';
+  const m = ctx.measureText(text), tw = m.width, asc = m.actualBoundingBoxAscent, desc = m.actualBoundingBoxDescent, th = asc + desc;
+  ctx.translate(x + w / 2, y + h / 2); ctx.rotate(rotate);
+  const along = rotate ? h : w, across = rotate ? w : h;
+  ctx.scale(along / tw, across / th); ctx.fillText(text, -tw / 2, asc - th / 2);
+  ctx.restore();
+}
+
+/* ---------- рецепты плакатов ---------- */
+const R = {};
+
+// WOMAN: фото «фасада» в движении → крупный 1-битный дизеринг → огромное слово поперёк, белым.
+R.bitType = (ctx, { word = 'ОБРАЗ', seed = 11 } = {}) => {
+  const [w, h] = size(ctx), r = rnd(seed);
+  ctx.fillStyle = '#d8d8d8'; ctx.fillRect(0, 0, w, h);
+  let y = 0;
+  while (y < h) {
+    const rh = 45 + r() * 80, skew = (r() - .5) * 70, light = 160 + r() * 70;
+    const gr = ctx.createLinearGradient(0, y, w, y + rh); gr.addColorStop(0, `rgb(${light},${light},${light})`); gr.addColorStop(1, `rgb(${light - 70},${light - 70},${light - 70})`);
+    ctx.fillStyle = gr; ctx.fillRect(0, y, w, rh);
+    let x = -40;
+    while (x < w + 40) {
+      const tw = 40 + r() * 110, gap = 10 + r() * 45, tone = 8 + r() * 45 + (r() < .2 ? 70 : 0);
+      ctx.fillStyle = `rgb(${tone},${tone},${tone})`;
+      ctx.beginPath(); ctx.moveTo(x, y + 4); ctx.lineTo(x + tw, y + 4 + r() * 6); ctx.lineTo(x + tw + skew * .5, y + rh - 4); ctx.lineTo(x + skew * .5, y + rh - 4); ctx.fill();
+      x += tw + gap;
+    }
+    for (let k = 0; k < 3; k++) { const t = 110 + r() * 100; ctx.fillStyle = `rgba(${t},${t},${t},.5)`; ctx.fillRect(0, y + r() * rh, w, 2 + r() * 8); }
+    y += rh;
+  }
+  slices(ctx, { n: 30, max: 50, prob: .4, dir: 'h', seed });
+  dither(ctx, { algo: 'floyd', scale: 3, gamma: 1.1 });
+  fitText(ctx, word, { font: '"Montserrat"', weight: 600, x: w * .06, y: -h * .01, w: w * .88, h: h * 1.02, rotate: -Math.PI / 2, fill: PAL.white });
+};
+
+// WOMAN в цвете: датамош-фон, слово в три полупрозрачных слоя, муаровые кольца.
+R.acidType = (ctx, { word = 'ОБРАЗ', seed = 21 } = {}) => {
+  const [w, h] = size(ctx), r = rnd(seed), cols = [PAL.magenta, PAL.yellow, PAL.crimson, PAL.orange, '#D375D1', '#759FEB', '#E81C64', PAL.acid, '#CE2B57', '#4F1A2E', '#D5972B'];
+  let y = 0;
+  while (y < h) { const bh = 3 + r() * 34; ctx.fillStyle = cols[(r() * cols.length) | 0]; ctx.fillRect(0, y, w, bh); y += bh; }
+  for (let k = 0; k < 420; k++) { ctx.fillStyle = cols[(r() * cols.length) | 0]; ctx.fillRect(r() * w, r() * h, 3 + r() * 40, 2 + r() * 26); }
+  for (let k = 0; k < 160; k++) { ctx.fillStyle = cols[(r() * cols.length) | 0]; ctx.fillRect(r() * w, r() * h, 1 + r() * 4, 20 + r() * 160); }
+  ctx.font = '700 14px "Oswald"'; for (let k = 0; k < 40; k++) { ctx.fillStyle = cols[(r() * cols.length) | 0]; ctx.fillText(word + ' ' + word, r() * w - 40, r() * h); }
+  slices(ctx, { n: 26, max: 30, prob: .7, dir: 'v', seed: seed + 1 });
+  datamosh(ctx, { count: 90, seed: seed + 2, maxW: .4, maxH: .06 });
+  [[-.03, .38, '#C9B0F2', .86], [.3, .4, '#7FA6F0', .8], [.62, .4, '#D9C6F7', .72], [.16, .42, PAL.white, .3]].forEach(([x0, ww, c, a], i) =>
+    fitText(ctx, word, { font: '"Montserrat"', weight: 600, x: w * x0, y: h * (i % 2 ? .015 : -.01), w: w * ww, h, rotate: -Math.PI / 2, fill: c, alpha: a }));
+  moire(ctx, { centers: [[.3, .6], [.66, .48]], step: 7, lw: .9, color: PAL.white, alpha: .5, squash: 1 });
+  datamosh(ctx, { count: 25, seed: seed + 4, maxW: .3, maxH: .04 });
+  slices(ctx, { n: 40, max: 12, prob: .5, dir: 'h', seed: seed + 3 });
+};
+
+// Бах: сетка плиток, в каждой одна и та же звуковая волна в своей палитре.
+R.waveGrid = (ctx, { label = 'OBRAZ — ПУТЬ №2,1', seed = 31 } = {}) => {
+  const [w, h] = size(ctx), r = rnd(seed), n = noise(seed);
+  const pals = [[PAL.ultramarine, PAL.acid, PAL.aqua, '#06240A', PAL.acid], [PAL.magenta, '#24C5DD', '#E3221B', '#2A0B3A', PAL.magenta], ['#3B1747', '#78497F', '#B389BC', '#F2E6F5'], ['#E938CC', '#B388F0', '#F7E04A', '#F5A3E5'], ['#05030A', '#2A0B3A', '#E21BDB', '#24C5DD']];
+  const tiles = [], split = (x, y, tw, th, d) => { if (d > 4 || (d > 2 && r() < .3) || tw < 70 || th < 70) { tiles.push([x, y, tw, th]); return; } if (tw > th ? r() < .75 : r() < .25) { const s = tw * (.35 + r() * .3); split(x, y, s, th, d + 1); split(x + s, y, tw - s, th, d + 1); } else { const s = th * (.35 + r() * .3); split(x, y, tw, s, d + 1); split(x, y + s, tw, th - s, d + 1); } };
+  split(0, 0, w, h, 0);
+  const fx = .09 + r() * .05, A = 4 + r() * 4, n2 = noise(seed + 9);
+  for (const [x, y, tw, th] of tiles) {
+    const c = canvas(Math.ceil(tw), Math.ceil(th)), g = c.getContext('2d'), id = g.createImageData(c.width, c.height), d = id.data, ph = r() * 9, sc = .8 + r() * .8;
+    for (let yy = 0; yy < c.height; yy++) for (let xx = 0; xx < c.width; xx++) {
+      const X = x + xx + (yy % 2 ? 4 : 0), Y = y + yy, v = clamp(.5 + .5 * Math.sin(X * fx * sc + A * Math.sin(Y * .06 + ph) + 9 * fbm(n, X * .012, Y * .03, 3)) + (n2(X * .35, Y * .9) - .5) * .5, 0, 1);
+      const i = (yy * c.width + xx) * 4, l = v * 255; d[i] = d[i + 1] = d[i + 2] = l; d[i + 3] = 255;
+    }
+    g.putImageData(id, 0, 0);
+    gradientMap(g, pals[(r() * pals.length) | 0], { bands: 7 });
+    slices(g, { n: 14, max: 18, prob: .5, seed: (r() * 1e6) | 0 });
+    datamosh(g, { count: 3 + ((r() * 6) | 0), seed: (r() * 1e6) | 0, maxW: .7, maxH: .15 });
+    ctx.drawImage(c, x, y);
+  }
+  const t = tiles[(r() * Math.min(3, tiles.length)) | 0];
+  ctx.save(); ctx.fillStyle = PAL.white; ctx.font = `500 ${Math.round(w * .036)}px "Oswald"`; ctx.textBaseline = 'top'; ctx.fillText(label.toUpperCase(), t[0] + 8, t[1] + t[3] + 4 > h - 30 ? t[1] + 8 : t[1] + t[3] + 4); ctx.restore();
+};
+
+// Штрихи: узор из «Ф» → жидкая деформация → два цвета (бирюза/чёрный) → розовые лезвия мелком,
+// сквозь которые виден тот же узор в красном.
+R.scribble = (ctx, { glyph = 'Ф', seed = 41 } = {}) => {
+  const [w, h] = size(ctx), r = rnd(seed);
+  const base = canvas(w, h), b = base.getContext('2d');
+  typePattern(b, { glyph, font: `700 ${w * .048}px "Playfair Display"`, color: PAL.black, bg: PAL.white, sx: w * .05, sy: w * .042 });
+  warp(b, { amp: 7, freq: .035, noiseAmp: 55, noiseFreq: .01, twirl: 1.6, seed });
+  const cy = canvas(w, h), c = cy.getContext('2d'); c.drawImage(base, 0, 0); duotone(c, { dark: PAL.black, light: PAL.cyan, threshold: 120 });
+  const rd = canvas(w, h), q = rd.getContext('2d'); q.drawImage(base, 0, 0); warp(q, { amp: 6, freq: .05, seed: seed + 1 }); duotone(q, { dark: PAL.red, light: PAL.pink, threshold: 80 });
+  ctx.fillStyle = PAL.black; ctx.fillRect(0, 0, w, h);
+  // бирюзовое поле с рваным краем
+  const n = noise(seed + 2), m = canvas(w, h), mg = m.getContext('2d'), md = mg.createImageData(w, h);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const e = Math.min(x, w - x, y, h - y) / (w * .5), v = e + (fbm(n, x * .02, y * .02, 3) - .5) * .5; md.data[(y * w + x) * 4 + 3] = v > .12 ? 255 : 0; }
+  mg.putImageData(md, 0, 0); mg.globalCompositeOperation = 'source-in'; mg.drawImage(cy, 0, 0); ctx.drawImage(m, 0, 0);
+  // чёрные лезвия
+  for (let k = 0; k < 6; k++) scribble(ctx, { x: w * (-.05 + r() * .7), y: h * (.2 + r() * .8), len: h * .32, angle: -1.05, legs: 3, spacing: w * .1, width: w * .11, color: PAL.black, seed: seed + 10 + k, grain: 0 });
+  // розовые лезвия-маска, сквозь них красный узор
+  const mk = canvas(w, h), kg = mk.getContext('2d');
+  for (let k = 0; k < 5; k++) scribble(kg, { x: -w * .15 + r() * w * .45, y: h * (.12 + k * .19 + r() * .05), len: w * (.8 + r() * .45), angle: -.7 - r() * .25, legs: 6 + ((r() * 6) | 0), spacing: w * .035, width: w * (.035 + r() * .025), color: '#fff', seed: seed + 20 + k });
+  kg.globalCompositeOperation = 'source-in'; kg.drawImage(rd, 0, 0); ctx.drawImage(mk, 0, 0);
+};
+
+// Падающая типографика на белом.
+R.falling = (ctx, { line = 'Найди свой путь', drop = [2, 7, 12], extras = '&ё’оаи&рт', pileGlyphs = '&ПАт&ы', seed = 51 } = {}) => fallingType(ctx, { line, drop, extras, pileGlyphs, seed });
+
+// Волна: «вода» из шума → карта цвета → светящиеся контуры → радуга по краям → растр → текст узкой антиквой.
+R.wave = (ctx, { title = 'ВОЛНА НЕСЁТ К МЕЧТЕ', year = '2026', seed = 61 } = {}) => {
+  const [w, h] = size(ctx), n = noise(seed), r = rnd(seed);
+  ctx.fillStyle = PAL.black; ctx.fillRect(0, 0, w, h);
+  const ix = w * .02, iy = h * .045, iw = w * .9, ih = h * .93, c = canvas(iw | 0, ih | 0), g = c.getContext('2d'), id = g.createImageData(c.width, c.height), d = id.data;
+  const map = [hex(PAL.black), hex(PAL.deep), hex('#365659'), hex(PAL.teal), hex('#6B7674'), hex('#939A94'), hex('#C9B8A8'), hex(PAL.foam)];
+  for (let y = 0; y < c.height; y++) for (let x = 0; x < c.width; x++) {
+    const qx = x * .01, qy = y * .014, wv = fbm(n, qx + 2.4 * fbm(n, qx * 2, qy * 2, 4), qy + 1.8 * fbm(n, qx * 1.7 + 9, qy * 1.3, 4), 6);
+    const t = clamp((wv - .4) * 2.6, 0, .999), k = Math.floor(t * (map.length - 1)), f = t * (map.length - 1) - k, A = map[k], B = map[k + 1], i = (y * c.width + x) * 4;
+    for (let ch = 0; ch < 3; ch++) d[i + ch] = A[ch] + (B[ch] - A[ch]) * f;
+    const fo = 1 - Math.abs(2 * fbm(n, x * .045 + 70, y * .06, 3) - 1); if (fo > .9) { const k2 = (fo - .9) * 8; for (let ch = 0; ch < 3; ch++) d[i + ch] += (235 - d[i + ch]) * k2; } // пена
+    const line = Math.abs(((wv * 18) % 1) - .5); if (line < .07 && x > c.width * (.3 + .2 * Math.sin(y * .01))) { d[i] = 110; d[i + 1] = 255; d[i + 2] = 236; } // бирюзовые линии-контуры
+    d[i + 3] = 255;
+  }
+  g.putImageData(id, 0, 0);
+  warp(g, { amp: 6, freq: .04, seed: seed + 1 });
+  checkers(g, { count: 9, cell: 4, seed: seed + 2 });
+  rgbSplit(g, { dx: 5, dy: 2 });
+  halftone(g, { cell: 6, angle: 45, mix: .25 });
+  ctx.drawImage(c, ix, iy);
+  // слой выходит за рамку сверху справа
+  ctx.save(); ctx.beginPath(); ctx.rect(ix + iw * .72, 0, iw * .4, iy + 2); ctx.clip(); ctx.globalAlpha = .9; ctx.drawImage(c, ix + iw * .05, iy - ih * .045, iw, ih); ctx.restore();
+  const tx = canvas(w, h), tg = tx.getContext('2d');
+  tg.fillStyle = '#F2EEE6'; tg.font = `400 ${w * .07}px "Oranienbaum"`; tg.textBaseline = 'alphabetic';
+  tg.save(); tg.translate(ix + w * .03, iy + ih - h * .06); tg.scale(.78, 1.45); tg.fillText(title, 0, 0); tg.restore();
+  tg.globalAlpha = .55; tg.font = `400 ${w * .035}px "Oranienbaum"`; tg.fillText(title.toLowerCase(), ix + iw * .06, iy + ih * .44); tg.fillText(title.toLowerCase(), ix + iw * .4, iy + ih * .9);
+  tg.globalAlpha = 1; tg.fillStyle = PAL.salmon; tg.save(); tg.translate(ix + w * .04, iy + h * .07); tg.scale(.7, 1.5); tg.font = `400 ${w * .06}px "Oranienbaum"`; tg.fillText(year, 0, 0); tg.restore();
+  rgbSplit(tg, { dx: 2 }); ctx.drawImage(tx, 0, 0);
+};
+
+// Космос: туманность из шума, кольцо света, город, отражение, росчерки, разведение каналов, растр, узкий гротеск.
+R.space = (ctx, { top = ['МЫ ИЩЕМ КОСМОС', 'ЧТОБЫ НАЙТИ МАСШТАБ СЕБЯ'], kicker = 'НЕВОЗМОЖНОЕ СТАЛО', title = 'ВОЗМОЖНЫМ', seed = 71 } = {}) => {
+  const [w, h] = size(ctx), n = noise(seed), r = rnd(seed), id = ctx.createImageData(w, h), d = id.data, horizon = Math.round(h * .66);
+  const map = [hex(PAL.night), hex(PAL.dusk), hex(PAL.plum), hex('#6B2C72'), hex(PAL.violet), hex(PAL.rose), hex(PAL.mist), hex('#E9F2E4')];
+  const cx = w * .5, cy = h * .36, R0 = w * .32;
+  for (let y = 0; y < horizon; y++) for (let x = 0; x < w; x++) {
+    let v = fbm(n, x * .006 + fbm(n, x * .01, y * .01, 3), y * .006, 5) * .75;
+    const rr = Math.hypot((x - cx) / 1.05, y - cy), ring = Math.exp(-((rr - R0) ** 2) / (2 * (w * .035) ** 2)) * (.6 + .8 * fbm(n, x * .02 + 50, y * .02, 3));
+    v = clamp(v * (.6 + .5 * (1 - rr / (w * .9))) + ring * .55 - (x < w * .2 || x > w * .82 ? .12 : 0), 0, .999);
+    const k = Math.floor(v * (map.length - 1)), f = v * (map.length - 1) - k, A = map[k], B = map[k + 1], i = (y * w + x) * 4;
+    for (let ch = 0; ch < 3; ch++) d[i + ch] = A[ch] + (B[ch] - A[ch]) * f; d[i + 3] = 255;
+  }
+  ctx.putImageData(id, 0, 0);
+  for (let k = 0; k < 260; k++) { ctx.fillStyle = `rgba(255,255,255,${.3 + r() * .7})`; const s = r() < .9 ? 1 : 2.5; ctx.fillRect(r() * w, r() * horizon, s, s); }
+  // город по краям
+  for (let side = 0; side < 2; side++) for (let k = 0; k < 34; k++) {
+    const bw = 5 + r() * 22, bh = 30 + Math.pow(r(), 1.6) * h * .38, bx = side ? w - Math.pow(r(), 1.5) * w * .38 - bw : Math.pow(r(), 1.5) * w * .38;
+    ctx.fillStyle = `rgba(${10 + r() * 30},${8 + r() * 14},${24 + r() * 40},.9)`; ctx.fillRect(bx, horizon - bh, bw, bh);
+    for (let q = 0; q < bh / 4; q++) if (r() < .35) { ctx.fillStyle = [PAL.magenta, PAL.aqua, '#9DFF7A', '#F2E6F5', PAL.violet, '#FF6FD8'][(r() * 6) | 0]; ctx.fillRect(bx + r() * bw, horizon - bh + q * 4, 1 + r() * 2, 1 + r() * 2); }
+  }
+  // отражение с рябью
+  const top_ = ctx.getImageData(0, horizon - (h - horizon), w, h - horizon), refl = ctx.createImageData(w, h - horizon), a = top_.data, b = refl.data, H2 = h - horizon; // horizon целый: индексы пикселей должны быть целыми
+  for (let y = 0; y < H2; y++) { const sy = H2 - 1 - y, off = Math.round(Math.sin(y * .5) * (2 + y * .04)); for (let x = 0; x < w; x++) { const sx = clamp(x + off, 0, w - 1), i = (y * w + x) * 4, j = (sy * w + sx) * 4, k = .8 * (1 - y / H2 * .6); b[i] = a[j] * k; b[i + 1] = a[j + 1] * k; b[i + 2] = a[j + 2] * k; b[i + 3] = 255; } }
+  ctx.putImageData(refl, 0, horizon);
+  streaks(ctx, { count: 170, maxLen: w * .35, seed: seed + 1, alpha: .55 });
+  streaks(ctx, { count: 60, maxLen: h * .3, seed: seed + 5, alpha: .45, dir: 'v', y0: .5, y1: .66, maxH: 3 });
+  slices(ctx, { n: 50, max: 14, prob: .35, dir: 'h', seed: seed + 2 });
+  rgbSplit(ctx, { dx: 4 });
+  halftone(ctx, { cell: 7, angle: 45, mix: .35 });
+  // заголовок: узкий гротеск, лаванда с растром и сбоем
+  const tc = canvas(w, h), tg = tc.getContext('2d');
+  fitText(tg, title, { font: '"Oswald"', weight: 700, x: w * .06, y: h * .63, w: w * .88, h: h * .12, fill: PAL.lavender });
+  tg.globalCompositeOperation = 'source-atop'; tg.globalAlpha = .22; tg.drawImage(ctx.canvas, 0, 0); tg.globalAlpha = 1;
+  halftone(tg, { cell: 6, angle: 45, mix: .45, color: '#5a2a73', invert: true });
+  tg.globalCompositeOperation = 'source-over';
+  slices(tg, { n: 20, max: 10, prob: .5, seed: seed + 3 });
+  ctx.drawImage(tc, 0, 0);
+  ctx.fillStyle = '#F1ECF4'; ctx.font = `600 ${w * .045}px "Oswald"`; ctx.textAlign = 'right'; ctx.fillText(kicker, w * .92, h * .6);
+  ctx.textAlign = 'left'; ctx.font = `300 ${w * .02}px "Unbounded"`; ctx.fillStyle = '#E8E4EE';
+  if ('letterSpacing' in ctx) ctx.letterSpacing = '2px';
+  ctx.fillText(top[0], w * .07, h * .05); ctx.textAlign = 'right'; ctx.fillText(top[1], w * .93, h * .05); ctx.textAlign = 'left';
+  if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
+  streaks(ctx, { count: 25, maxLen: w * .25, seed: seed + 4, alpha: .4, maxH: 2 });
+};
+
+return { PAL, rnd, noise, fbm, canvas, dither, duotone, gradientMap, rgbSplit, slices, streaks, datamosh, halftone, moire, warp, typePattern, scribble, fallingType, grain, checkers, fitText, recipes: R };
+})();
+
+// v3: к каждой выставке добавлены мотив похода по Фалку (m: номер мотива → сила 1 или 0,5),
+// знакомость f (0 — классика и известные имена, 1 — новое и незнакомое) и конвейер картинки k.
+// Мотив и знакомость в проекте ставит куратор или искусствовед; здесь проставлено для прототипа.
+const EXTRA={
+ pastel:{m:{3:1,1:.5},f:.2,k:'bit'},  musatov:{m:{1:1,3:.5},f:.3,k:'bit'}, kuzmin:{m:{3:1,0:.5},f:.4,k:'bit'},
+ xx:{m:{0:1,2:.5},f:.4,k:'acid'},      impr:{m:{4:1,0:.5,2:.5},f:.1,k:'bit'}, star:{m:{1:1,0:.5},f:.8,k:'night'},
+ phen:{m:{0:1,2:.5},f:.9,k:'acid'},    ludwig:{m:{4:1,2:.5,0:.5},f:.55,k:'acid'}, dali:{m:{2:1,4:.5},f:.2,k:'acid'},
+ inside:{m:{2:1,4:1},f:.5,k:'night'},  dream:{m:{1:1,2:.5},f:.75,k:'night'}, turtle:{m:{4:1,3:.5},f:.35,k:'acid'},
+ paris:{m:{0:1,4:.5},f:.45,k:'bit'},   shito:{m:{3:1,1:.5},f:.5,k:'acid'}};
+EX.forEach(e=>Object.assign(e,EXTRA[e.id]));
+// Пушкинская карта: государственные музеи и площадки. Частный музей «Дали и Пикассо» и центр «Марс» исключены.
+// Подтверждено по источникам только для Третьяковки и ГМИИ, остальное сверить в Госуслуги.Культура перед защитой.
+const PK={pastel:1,musatov:1,kuzmin:1,xx:1,impr:1,star:1,phen:1,ludwig:1,turtle:1,paris:1,shito:1};
+
+// Ход 1. Погода вечера: поле двух осей эмоций цвета (Ou, Luo 2004): тепло — холодно, легко — тяжело.
+// Девять погод — подписи областей поля, из них берётся первое слово пути.
+const WX=[
+ {n:'Снег',adj:'Снежный',x:-1,y:1},{n:'Ветер',adj:'Ветреный',x:0,y:1},{n:'Солнце',adj:'Солнечный',x:1,y:1},
+ {n:'Дождь',adj:'Дождливый',x:-1,y:0},{n:'Облака',adj:'Облачный',x:0,y:0},{n:'Бабье лето',adj:'Тёплый',x:1,y:0},
+ {n:'Полярная ночь',adj:'Ночной',x:-1,y:-1},{n:'Сумерки',adj:'Сумеречный',x:0,y:-1},{n:'Гроза',adj:'Грозовой',x:1,y:-1}];
+const wxAt=(x,y)=>WX.reduce((b,w)=>{const d=(w.x*.67-x)**2+(w.y*.67-y)**2;return d<b.d?{w,d}:b},{w:WX[4],d:99}).w;
+
+// Ход 2. Узор: три круга, поле всё крупнее и сложнее (G — плиток в стороне, B — сложность поля 0…4).
+// Варианты: проще поля, так же, сложнее поля. Правильного ответа нет: выбор показывает, тянет ли к простому или к насыщенному (Берлайн, Güçlütürk 2016).
+const PAT=[{G:4,B:1},{G:6,B:2},{G:8,B:3}];
+const PAT_WORD=['проще','в том же ритме','сложнее'];
+
+// Ход 3. Метафорические карты (принцип OH-карт) к фразе «Сегодня я хочу…».
+// Каждая карта — один из пяти мотивов посетителя музея по Джону Фалку (2009) и склонность по модели IPOP (Smithsonian).
+const MOT=[
+ {card:'Ключ',want:'узнать, как всё было',falk:'исследователь',ipop:'идеи',dest:'к разгадке',ex:'есть что узнать',eff:'где есть история и что узнать'},
+ {card:'Вода',want:'выдохнуть',falk:'перезагрузка',ipop:'физическое: свет и тишина',dest:'в тишину',ex:'можно побыть в тишине',eff:'где можно побыть в тишине'},
+ {card:'Вспышка',want:'удивиться',falk:'искатель впечатлений',ipop:'физическое: масштаб и движение',dest:'в стихию',ex:'впечатляет с порога',eff:'которые впечатляют с порога'},
+ {card:'Лупа',want:'рассмотреть, как это сделано',falk:'профессионал и любитель',ipop:'объекты: форма и мастерство',dest:'в детали',ex:'видно, как это сделано',eff:'где можно разглядеть, как сделано'},
+ {card:'Мост',want:'провести время с кем-то',falk:'сопровождающий',ipop:'люди: истории и эмоции',dest:'навстречу',ex:'хорошо идти вместе',eff:'куда хорошо пойти вместе'}];
+
+// Уточнение (необязательно, после результата): фрагменты работ, каждое окно сдвигает вкус к фрагменту на 20%.
+const WINDOWS=[{q:'В какое окно хочется заглянуть?',ids:['xx','pastel','star']},{q:'Где ты задержишься дольше?',ids:['shito','dream','phen']}];
+
+/* ======================= рисование ======================= */
+const CACHE={};
+const FONTS_READY=(document.fonts&&document.fonts.load)?Promise.all(['700 60px Oswald','600 30px Oswald','300 30px Unbounded','500 30px "Golos Text"','600 30px "Golos Text"','italic 400 40px "Playfair Display"','700 40px "Playfair Display"','400 40px Oranienbaum'].map(f=>document.fonts.load(f))).catch(()=>{}):Promise.resolve();
+const INK='#000000',FG='#F2EEF4',MUTE='#9C95A6',CYAN='#00E6DA',PINK='#F4C2E4',RED='#F5321E',VIOLET='#A968C2';
+const NIGHT=['#06070B','#1A1A32','#3C2045','#8734B6','#B73382','#9CA5A0','#E9F2E4'];
+const tintOf=t=>t>.25?PINK:t<-.25?CYAN:FG;
+function avgLum(g){const d=g.getImageData(0,0,g.canvas.width,g.canvas.height).data;let s=0;for(let i=0;i<d.length;i+=16)s+=.299*d[i]+.587*d[i+1]+.114*d[i+2];return s/(d.length/16)}
+function spaced(g,px){if('letterSpacing' in g)g.letterSpacing=px+'px'}
+function fitFont(g,text,weight,family,maxW,start,min){let fs=start;g.font=`${weight} ${fs}px ${family}`;while(g.measureText(text).width>maxW&&fs>min){fs-=2;g.font=`${weight} ${fs}px ${family}`}return fs}
+function wrap(g,text,x,y,maxW,lh){const words=String(text).split(' ');let line='',yy=y;for(const w of words){const t=line?line+' '+w:w;if(g.measureText(t).width>maxW&&line){g.fillText(line,x,yy);line=w;yy+=lh}else line=t}if(line)g.fillText(line,x,yy);return yy}
+
+// фото выставки → конвейер из плакатов: «строгий 1 бит», «кислота» или «ночной сбой»
+function exCanvas(e){
+  const c=fragBase(e.x,LOOK[e.id],seedOf(e.id)),g=c.getContext('2d'),sd=seedOf(e.id)%9973,tint=tintOf(e.x[0]);
+  if(e.k==='bit'){OS.dither(g,{algo:'atkinson',scale:2,dark:'#050505',light:tint,gamma:1.05});OS.slices(g,{n:18,max:22,prob:.3,seed:sd})}
+  else if(e.k==='acid'){OS.warp(g,{amp:5,freq:.03,seed:sd});OS.duotone(g,{dark:INK,light:tint,threshold:avgLum(g)});OS.slices(g,{n:20,max:26,prob:.35,dir:'v',seed:sd})}
+  else{OS.gradientMap(g,NIGHT,{bands:6});OS.streaks(g,{count:50,maxLen:170,alpha:.5,seed:sd});OS.rgbSplit(g,{dx:3});OS.halftone(g,{cell:6,angle:45,mix:.3})}
+  return c;
+}
+function exImg(e){const k='e'+e.id;if(!CACHE[k])CACHE[k]=exCanvas(e).toDataURL(e.k==='night'?'image/jpeg':'image/png',.88);return CACHE[k]}
+const KIND={bit:'строгий 1 бит',acid:'кислота',night:'ночной сбой'};
+const frag=(e,label)=>`<span class="frag"><img src="${exImg(e)}" alt="Фрагмент работы с выставки, обработанный в стиле Obraz"><span class="ph">${label||'плейсхолдер · '+KIND[e.k]}</span></span>`;
+
+// поле погоды: цвет от бирюзы (холод) через сирень к розовому и красному (тепло), светлота сверху вниз; растр точками
+function padCanvas(){
+  if(CACHE.pad)return CACHE.pad;
+  const N=400,c=OS.canvas(N,N),g=c.getContext('2d'),id=g.createImageData(N,N),d=id.data;
+  const cold=[0,230,218],mid=[227,209,238],warm=[244,194,228],hot=[245,50,30],night=[60,32,69],lerp=(a,b,t)=>a.map((v,i)=>v+(b[i]-v)*t);
+  for(let y=0;y<N;y++)for(let x=0;x<N;x++){
+    const tx=x/(N-1)*2-1,ty=1-y/(N-1)*2;
+    let col=tx<0?lerp(mid,cold,-tx):tx<.5?lerp(mid,warm,tx*2):lerp(warm,hot,(tx-.5)*2);
+    if(ty<0)col=lerp(col,night,-ty*.55);
+    const k=.2+.8*(ty+1)/2,i=(y*N+x)*4;d[i]=col[0]*k;d[i+1]=col[1]*k;d[i+2]=col[2]*k;d[i+3]=255;
+  }
+  g.putImageData(id,0,0);
+  OS.halftone(g,{cell:10,angle:45,mix:1,gain:1.3,bg:INK});
+  OS.slices(g,{n:14,max:10,prob:.3,seed:5});
+  return CACHE.pad=c;
+}
+
+// узор из плиток Кооса: 0 фон, 1 цвет, 2–5 треугольник в углу (лв, пв, пн, лн), 8 акцент, 9 плитка из четырёх мелких
+function kohsCode(L,i,j,seed){
+  const r=rng(seed*7919+i*131+j*17+L*100003);
+  switch(L){
+    case 0:return i%2?0:1;
+    case 1:return (i+j)%2?1:2;
+    case 2:return[4,5,3,2][(i%2)*2+(j%2)];
+    case 3:{const v=r();return v<.18?0:v<.3?1:v<.38?8:2+Math.floor(r()*4)}
+    default:{const v=r();return v<.5?9:v<.62?8:2+Math.floor(r()*4)}
+  }
+}
+function drawTile(g,code,x,y,s,C,r){
+  g.fillStyle=C.bg;g.fillRect(x,y,s+.5,s+.5);
+  if(code===0)return;
+  const col=code===8?C.ac:C.fg;
+  if(code===1||code===8){g.fillStyle=col;g.fillRect(x,y,s+.5,s+.5);return}
+  if(code===9){const h=s/2;for(let a=0;a<2;a++)for(let b=0;b<2;b++)drawTile(g,2+Math.floor(r()*4),x+b*h,y+a*h,h,{bg:C.bg,fg:r()<.35?C.ac:C.fg,ac:C.ac},r);return}
+  const X0=x,Y0=y,X1=x+s+.5,Y1=y+s+.5;g.fillStyle=col;g.beginPath();
+  if(code===2){g.moveTo(X0,Y0);g.lineTo(X1,Y0);g.lineTo(X0,Y1)}
+  if(code===3){g.moveTo(X0,Y0);g.lineTo(X1,Y0);g.lineTo(X1,Y1)}
+  if(code===4){g.moveTo(X1,Y0);g.lineTo(X1,Y1);g.lineTo(X0,Y1)}
+  if(code===5){g.moveTo(X0,Y0);g.lineTo(X1,Y1);g.lineTo(X0,Y1)}
+  g.closePath();g.fill();
+}
+const patColors=x=>({bg:INK,fg:tintOf(x),ac:x>0?RED:VIOLET});
+// сдвиг полос внутри области: сбой для самого сложного куска
+function glitchRegion(g,x,y,w,h,n,amp,r){for(let i=0;i<n;i++){const sy=y+r()*h,sh=3+r()*h/7,dx=(r()-.5)*2*amp;g.drawImage(g.canvas,x,sy,w,sh,x+dx,sy,w,sh)}}
+// кусок узора: клетки с row0/col0 по n штук, уровень L; одинаковый уровень с полем даёт бесшовное продолжение
+function drawPiece(g,ox,oy,s,rd,L,row0,col0,n,C){
+  const seed=rd*10+L+1;
+  for(let a=0;a<n;a++)for(let b=0;b<n;b++){const i=row0+a,j=col0+b;drawTile(g,kohsCode(L,i,j,seed),ox+b*s,oy+a*s,s,C,rng(seed*31+i*7+j))}
+  if(L>=4)glitchRegion(g,ox,oy,n*s,n*s,6,s*.35,rng(seed+99));
+}
+function drawBoard(cv,rd,C,L){
+  const {G,B}=PAT[rd],N=cv.width,s=N/G,gp=Math.floor(G/2),g=cv.getContext('2d');
+  g.fillStyle=C.bg;g.fillRect(0,0,N,N);
+  for(let i=0;i<G;i++)for(let j=0;j<G;j++){if(i>=G-gp&&j>=G-gp)continue;const sd=rd*10+B+1;drawTile(g,kohsCode(B,i,j,sd),j*s,i*s,s,C,rng(sd*31+i*7+j))}
+  if(B>=4)glitchRegion(g,0,0,N,N,6,s*.3,rng(rd));
+  const x0=(G-gp)*s;
+  if(L==null){g.fillStyle=C.bg;g.fillRect(x0,x0,gp*s,gp*s);g.setLineDash([8,8]);g.strokeStyle=MUTE;g.lineWidth=2;g.strokeRect(x0+6,x0+6,gp*s-12,gp*s-12);g.setLineDash([]);
+    g.fillStyle=MUTE;g.font=`700 ${Math.round(gp*s*.4)}px Oswald, sans-serif`;g.textAlign='center';g.textBaseline='middle';g.fillText('?',x0+gp*s/2,x0+gp*s/2);g.textAlign='left';g.textBaseline='alphabetic'}
+  else drawPiece(g,x0,x0,s,rd,L,G-gp,G-gp,gp,C);
+  OS.grain(g,{amt:30,seed:rd+1});
+}
+function pieceCanvas(rd,L,C){const {G}=PAT[rd],gp=Math.floor(G/2),N=240,c=OS.canvas(N,N),g=c.getContext('2d');drawPiece(g,0,0,N/gp,rd,L,G-gp,G-gp,gp,C);OS.grain(g,{amt:30,seed:rd+1});return c}
+
+// метафорические карты: образ без подписи-диагноза, человек сам вкладывает смысл
+function cardCanvas(k){
+  const key='cc'+k;if(CACHE[key])return CACHE[key];
+  const W=360,H=540,AH=450,c=OS.canvas(W,H),g=c.getContext('2d'),a=OS.canvas(W,AH),q=a.getContext('2d'),r=rng(100+k),cx=W/2;
+  g.fillStyle=INK;g.fillRect(0,0,W,H);q.fillStyle=INK;q.fillRect(0,0,W,AH);
+  if(k===0){ // ключ: 1 бит
+    const gr=q.createLinearGradient(0,0,0,AH);gr.addColorStop(0,'#3a3a3a');gr.addColorStop(1,'#0a0a0a');q.fillStyle=gr;q.fillRect(0,0,W,AH);
+    q.strokeStyle='#ffffff';q.fillStyle='#ffffff';q.lineWidth=26;q.beginPath();q.arc(cx,120,62,0,7);q.stroke();
+    q.fillRect(cx-13,180,26,220);q.fillRect(cx+13,320,52,24);q.fillRect(cx+13,366,34,24);
+    for(let i=0;i<9;i++){q.fillStyle=`rgba(255,255,255,${.15+r()*.3})`;q.fillRect(0,r()*AH,W,2+r()*6)}
+    OS.dither(q,{algo:'atkinson',scale:2,light:FG});OS.slices(q,{n:12,max:16,prob:.4,seed:3});
+  }else if(k===1){ // вода: волны бирюзой
+    q.strokeStyle=CYAN;for(let i=0;i<16;i++){q.lineWidth=2+r()*5;q.beginPath();for(let x=0;x<=W;x+=6){const y=30+i*26+Math.sin(x/34+i*.8)*12;x?q.lineTo(x,y):q.moveTo(x,y)}q.stroke()}
+    OS.warp(q,{amp:9,freq:.03,seed:2});OS.rgbSplit(q,{dx:3});
+  }else if(k===2){ // вспышка: лучи, сбой
+    for(let i=0;i<70;i++){const an=r()*6.3,l=40+r()*240;q.strokeStyle=r()<.5?RED:PINK;q.lineWidth=2+r()*7;q.beginPath();q.moveTo(cx+Math.cos(an)*20,210+Math.sin(an)*20);q.lineTo(cx+Math.cos(an)*l,210+Math.sin(an)*l);q.stroke()}
+    q.fillStyle=FG;q.beginPath();q.arc(cx,210,26,0,7);q.fill();
+    OS.rgbSplit(q,{dx:5});OS.datamosh(q,{count:8,seed:4,maxW:.5,maxH:.06});
+  }else if(k===3){ // лупа: узор из букв, в линзе крупнее
+    OS.typePattern(q,{glyph:'ж',font:'700 15px "Playfair Display", serif',color:'#3a3540',bg:INK,sx:15,sy:15});
+    q.save();q.beginPath();q.arc(cx-20,180,108,0,7);q.clip();OS.typePattern(q,{glyph:'ж',font:'700 44px "Playfair Display", serif',color:FG,bg:INK,sx:44,sy:40});q.restore();
+    q.strokeStyle=FG;q.lineWidth=12;q.beginPath();q.arc(cx-20,180,108,0,7);q.stroke();
+    q.save();q.translate(cx+58,262);q.rotate(.8);q.fillStyle=FG;q.fillRect(0,-14,150,28);q.restore();
+    OS.slices(q,{n:10,max:12,prob:.35,seed:7});
+  }else{ // мост: арка и отражение, растр
+    const gr=q.createLinearGradient(0,0,0,AH);gr.addColorStop(0,'#3C2045');gr.addColorStop(1,'#06070B');q.fillStyle=gr;q.fillRect(0,0,W,AH);
+    q.strokeStyle=PINK;q.lineWidth=18;q.beginPath();q.arc(cx,250,150,Math.PI,0);q.stroke();
+    q.fillStyle=PINK;q.fillRect(0,244,W,14);for(let i=0;i<7;i++){const x=cx-130+i*43;q.fillRect(x,250-Math.sqrt(Math.max(0,150*150-(x-cx)**2)),4,Math.sqrt(Math.max(0,150*150-(x-cx)**2)))}
+    q.save();q.globalAlpha=.45;q.translate(0,520);q.scale(1,-1);q.drawImage(a,0,0,W,262,0,0,W,262);q.restore();
+    OS.halftone(q,{cell:6,angle:30,mix:.6});OS.rgbSplit(q,{dx:3});
+  }
+  g.drawImage(a,0,0);
+  g.fillStyle=MUTE;g.font='300 12px Unbounded, sans-serif';spaced(g,3);g.fillText('КАРТА',16,26);spaced(g,0);
+  g.fillStyle=FG;g.font='700 46px Oswald, sans-serif';g.fillText(MOT[k].card.toUpperCase(),16,H-28);
+  return CACHE[key]=c;
+}
+const cardURL=k=>{const key='cu'+k;return CACHE[key]||(CACHE[key]=cardCanvas(k).toDataURL('image/png'))};
+
+/* ======================= как ходы становятся подборкой ======================= */
+const avg=a=>a.reduce((s,v)=>s+v,0)/(a.length||1);
+const patC=M=>{const v=(M.pat||[]).filter(x=>x!=null);return v.length?avg(v):0};
+// профиль из ходов: каждая ось берётся из своего хода, вес = 0,3 + 1,2·|значение хода|, у осей без хода 0,15
+function prof(M){
+  const p=Array(D).fill(0),w=Array(D).fill(.15),c=patC(M),wc=.3+1.2*Math.abs(c);
+  p[0]=M.x;w[0]=.3+1.2*Math.abs(M.x);
+  p[2]=M.y;w[2]=.3+1.2*Math.abs(M.y);
+  p[4]=c;w[4]=wc;p[6]=.5*c;w[6]=.6*wc;p[5]=-.4*c;w[5]=.4*wc;
+  (M.ref||[]).forEach((k,n)=>{if(k==null)return;const x=exById(WINDOWS[n].ids[k]).x;for(let i=0;i<D;i++)p[i]+=.2*(x[i]-p[i])});
+  return{p,w,c};
+}
+// совпадение по цвету и узору — формула Алёны: exp(−0,2·Σ w(x−p)²)
+const vis=(e,P)=>Math.exp(-.2*e.x.reduce((a,v,k)=>a+P.w[k]*(v-P.p[k])**2,0));
+// оценка = 0,6·совпадение + 0,25·мотив + 0,15·знакомое или новое
+function score(e,M){const P=prof(M),v=vis(e,P),mo=e.m[M.m]||0,nv=1-Math.abs(M.o-e.f);return{v,mo,nv,s:.6*v+.25*mo+.15*nv}}
+const isNew=e=>{const d=(TODAY-new Date(e.from))/864e5;return d>=-21&&d<=21};
+// вместе: min по участникам − 0,25 за повтор площадки + 0,05 за новую выставку
+function rank(ms,pkOnly){
+  const left=EX.filter(e=>!pkOnly||PK[e.id]).map(e=>{const prs=ms.map(M=>score(e,M).s);return{e,prs,pr:Math.min(...prs),nov:isNew(e)?1:0}});
+  const out=[],seen={};
+  while(left.length){left.forEach(o=>{o.rep=seen[o.e.g]||0;o.sc=o.pr-.25*o.rep+.05*o.nov});left.sort((a,b)=>b.sc-a.sc);const o=left.shift();seen[o.e.g]=(seen[o.e.g]||0)+1;out.push(o)}
+  return out;
+}
+// путь = погода (первое слово) + карта (куда ведёт); узор и знакомое говорят, каким путём
+function pathOf(ms){
+  const x=avg(ms.map(M=>M.x)),y=avg(ms.map(M=>M.y)),W=wxAt(x,y),m=ms.every(M=>M.m===ms[0].m)?ms[0].m:4;
+  return{W,m,x,y,c:avg(ms.map(patC)),o:avg(ms.map(M=>M.o)),n:`${W.adj} путь ${MOT[m].dest}`};
+}
+const tempWord=x=>x<-.25?'холодно':x>.25?'тепло':'ни тепло, ни холодно';
+const weightWord=y=>y>.25?'легко':y<-.25?'тяжело':'ни легко, ни тяжело';
+const palTxt=(x,y)=>{const a=x<-.25?'прохладной палитрой':x>.25?'тёплой палитрой':'',b=y>.25?'светлыми тонами':y<-.25?'тёмными тонами':'';return a&&b?`${a} и ${b}`:(a||b)};
+const times=n=>n===1?'1 раз':n+' раза';
+function patWord(M){const v=(M.pat||[]).filter(x=>x!=null),n=[0,1,2].map(k=>v.filter(x=>x===k-1).length);
+  if(n[0]===3)return'все три раза проще';if(n[2]===3)return'все три раза сложнее';if(n[1]===3)return'все три раза в том же ритме';
+  return[[n[0],'проще'],[n[1],'так же'],[n[2],'сложнее']].filter(a=>a[0]).map(a=>`${times(a[0])} ${a[1]}`).join(', ')}
+const patBig=c=>c<-.2?'Проще':c>.2?'Сложнее':'Ровно';
+const openWord=o=>o<.35?'ближе к знакомому':o>.65?'ближе к неизведанному':'знакомое и новое поровну';
+const openBig=o=>o<.35?'Знакомое':o>.65?'Новое':'Поровну';
+const openPct=o=>`знакомое ${Math.round((1-o)*100)}% · новое ${Math.round(o*100)}%`;
+function effects(P){
+  const pal=palTxt(P.x,P.y),pat=P.c<-.2?'где мало элементов и много воздуха':P.c>.2?'где плотно и много деталей':'со спокойной, но не пустой композицией';
+  const op=P.o<.35?'Больше знакомых имён и классики.':P.o>.65?'Больше новых имён и форматов.':'Знакомого и нового поровну.';
+  return`Поэтому выше выставки ${pal?'с '+pal+', ':''}${pat}. По карте «${MOT[P.m].card}» выше те, ${MOT[P.m].eff}. ${op}`;
+}
+// почему эта выставка: только те связи, которые есть на самом деле
+function whyLines(e,ms){
+  const P=pathOf(ms),out=[],w=[];
+  if(Math.abs(P.x)>.25&&Math.sign(e.x[0])===Math.sign(P.x)&&Math.abs(e.x[0])>.15)w.push(P.x>0?'тёплая палитра':'прохладная палитра');
+  if(Math.abs(P.y)>.25&&Math.sign(e.x[2])===Math.sign(P.y)&&Math.abs(e.x[2])>.15)w.push(P.y>0?'светлые тона':'тёмные тона');
+  if(w.length)out.push({k:'Погода',ch:`«${P.W.n.toLowerCase()}»`,res:w.join(', ')});
+  if(Math.abs(P.c)>.2&&Math.sign(e.x[4])===Math.sign(P.c)&&Math.abs(e.x[4])>.15)out.push({k:'Узор',ch:P.c<0?'проще':'сложнее',res:P.c<0?'мало элементов, много воздуха':'плотно, много деталей'});
+  if(ms.every(M=>(e.m[M.m]||0)>=.5)){const same=ms.every(M=>M.m===ms[0].m);out.push(same?{k:'Карта',ch:`«${MOT[ms[0].m].card}»`,res:MOT[ms[0].m].ex}:{k:'Карты',ch:'всех',res:'подходит каждому по мотиву'})}
+  if(P.o<.35&&e.f<=.4)out.push({k:'Знакомое',ch:'',res:'известные имена и классика'});
+  if(P.o>.65&&e.f>=.6)out.push({k:'Новое',ch:'',res:'новые имена и форматы'});
+  return out;
+}
+const cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
+
+/* ======================= ссылки (ничего не хранится) ======================= */
+// человек в ссылке = его ходы: погода x и y, три круга узора, карта, знакомое/новое, Пушкинская карта, два окна
+const L21='abcdefghijklmnopqrstu';
+const q21=v=>L21[Math.round((cl(v,-1,1)+1)*10)],u21=c=>L21.indexOf(c)/10-1;
+const encM=M=>q21(M.x)+q21(M.y)+M.pat.map(v=>v==null?'x':String(v+1)).join('')+'abcde'[M.m]+q21(M.o*2-1)+(M.pk?'1':'0')+M.ref.map(v=>v==null?'x':String(v)).join('');
+function decM(s){
+  if(!s||s.length!==10)return null;const a=[...s];
+  if(![a[0],a[1],a[6]].every(c=>L21.includes(c)))return null;const m='abcde'.indexOf(a[5]);if(m<0)return null;
+  const pat=a.slice(2,5).map(c=>'012'.includes(c)?+c-1:null),ref=a.slice(8,10).map(c=>'012'.includes(c)?+c:null);
+  return{x:u21(a[0]),y:u21(a[1]),pat,m,o:(u21(a[6])+1)/2,pk:a[7]==='1',ref};
+}
+const encName=n=>[...n.trim().slice(0,14)].map(c=>c.codePointAt(0).toString(36)).join('~');
+const decName=s=>{try{return s?s.split('~').map(t=>String.fromCodePoint(parseInt(t,36))).join(''):''}catch(e){return''}};
+const encPerson=o=>encM(o)+(o.name?'_'+encName(o.name):'');
+const decPerson=t=>{const [a,b]=t.split('_'),M=decM(a);return M?Object.assign(M,{name:decName(b)}):null};
+const baseURL=()=>(/github\.io$/.test(location.hostname)||location.protocol==='file:'||location.hostname==='localhost'||location.hostname==='127.0.0.1')?location.href.split('#')[0]:ARTIFACT_URL;
+const linkFor=(kind,people)=>baseURL()+'#'+kind+'.'+people.map(encPerson).join('.');
+
+/* ======================= состояние (только в памяти) ======================= */
+let S={screen:'home',me:null,myName:'',guests:[],invite:false,viewOnly:false,fromLink:false,g:null,ex:null,date:0,qty:1,bought:{},track:0,from:'stops',giftFmt:'card',giftSeed:1,showAll:false,pk:false,refStep:0};
+const app=document.getElementById('app');
+const NAV={home:'home',play:'play',path:'path',refine:'path',stops:'stops',ex:'stops',ticket:'stops',gift:'stops',audio:'stops',together:'together',join:'together',how:'how'};
+function go(screen,extra){stopAudio();if(screen==='ex'&&(S.screen==='stops'||S.screen==='together'))S.from=S.screen;Object.assign(S,{screen},extra||{});render();window.scrollTo({top:0})}
+document.getElementById('logo').onclick=()=>go('home');
+document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>b.dataset.s==='play'?startGame():go(b.dataset.s));
+const pkt=document.getElementById('pkt');
+function setPk(v,quiet){S.pk=v;if(S.me)S.me.pk=v;pkt.setAttribute('aria-pressed',String(v));if(!quiet)toast(v?'Только Пушкинская карта':'Все выставки')}
+pkt.onclick=()=>{setPk(!S.pk);if(S.screen!=='play')render()};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const exById=id=>EX.find(e=>e.id===id);
+const afisha=e=>'https://afisha.yandex.ru/moscow/search?text='+encodeURIComponent(e.t);
+const meP=()=>S.me?Object.assign({},S.me,{name:S.myName,isMe:true}):null;
+const group=()=>S.guests.length?[...S.guests,...(S.me&&!S.viewOnly?[meP()]:[])]:[];
+const who=(o,i)=>o.isMe?'Ты':(o.name||('Участник '+(i+1)));
+const people=()=>S.from==='together'&&group().length?group():(S.me?[S.me]:group());
+const npk=EX.filter(e=>PK[e.id]).length;
+function render(){
+  document.querySelectorAll('#nav button').forEach(b=>{b.classList.toggle('on',NAV[S.screen]===b.dataset.s);b.disabled=(b.dataset.s==='path'||b.dataset.s==='stops')&&!S.me});
+  ({home,play,path,refine,stops,ex,ticket,gift,audio,together,join,how})[S.screen]();
+}
+app.addEventListener('click',ev=>{if(ev.target.closest&&ev.target.closest('#howf'))go('how')});
+function toast(t){const d=document.createElement('div');d.className='toast';d.setAttribute('role','status');d.textContent=t;document.body.appendChild(d);setTimeout(()=>d.remove(),1900)}
+function shareBox(url,title){
+  return`<div class="share"><div class="stack"><p class="lab">${title}</p><input type="text" id="lnk" readonly value="${esc(url)}" aria-label="Ссылка">
+    <div class="row"><button id="cp">Скопировать</button></div><p class="mute small">В ссылке только ходы игры${url.includes('_')?' и имя, которое ты вписал(а)':''}. Obraz её нигде не хранит.</p></div><div class="qr" id="qr" aria-label="QR-код ссылки"></div></div>`;
+}
+function wireShare(url){
+  const inp=document.getElementById('lnk');
+  document.getElementById('cp').onclick=()=>{try{navigator.clipboard.writeText(url).then(()=>toast('Ссылка скопирована'),()=>{inp.select();toast('Выделено, скопируй вручную')})}catch(e){inp.select();toast('Выделено, скопируй вручную')}};
+  inp.onfocus=()=>inp.select();
+  const q=document.getElementById('qr');
+  if(window.QRCode){new QRCode(q,{text:url,width:130,height:130,correctLevel:QRCode.CorrectLevel.L})}else q.innerHTML='<p class="small" style="color:#000;margin:0">QR появится при подключении к интернету</p>';
+}
+const cutSpan=text=>`<span class="cut"><span>${esc(text)}</span><span class="cb" aria-hidden="true">${esc(text)}</span></span>`;
+const cut=(tag,text,cls='')=>`<${tag} class="${cls}">${cutSpan(text)}</${tag}>`;
+const foot=()=>`<footer><p>Obraz — цифровой путеводитель по художественным выставкам. Дипломный проект Алёны Якуповой, РАНХиГС 2026. Прототип v3: путеводитель и игра для Пушкинской карты в одном сайте, три хода вместо пяти.</p>
+  <p>Выставки на октябрь 2026 взяты из Яндекс Афиши и сайтов площадок, даты и участие в Пушкинской карте стоит проверить перед покупкой. В проекте этот список собирает агрегатор афиш. Картинки выставок — плейсхолдеры: на их месте будут кадрированные пресс-фото, пропущенные через те же фильтры. Obraz ничего не хранит и не собирает: всё считается в браузере, путь остаётся только в твоей карте или ссылке.</p>
+  <div class="row"><button class="ghost" id="howf">Как это работает</button></div></footer>`;
+const pkNote=(skip)=>`<div class="note"><p class="lab" style="color:var(--pink)">Как оплатить Пушкинской картой</p><p class="small">Купи билет на Яндекс Афише или на сайте музея и выбери оплату Пушкинской картой. Перед покупкой проверь, что у события есть отметка программы: список меняется. Карта для тех, кому от 14 до 22 лет, её оформляют в приложении Госуслуги.Культура.${skip?` Ещё ${skip} ${skip===1?'выставка':skip<5?'выставки':'выставок'} из афиши Obraz картой не оплачиваются, поэтому их здесь нет.`:''}</p></div>`;
+
+/* ======================= экраны ======================= */
+function heroArt(){
+  if(CACHE.hero)return Promise.resolve(CACHE.hero);
+  return FONTS_READY.then(()=>{const c=OS.canvas(520,650);OS.recipes.scribble(c.getContext('2d'),{glyph:'О',seed:41});return CACHE.hero=c.toDataURL('image/png')});
+}
+function home(){
+  app.innerHTML=`<section class="hero">
+    <div class="stack" style="gap:20px">
+      <p class="lab">${S.pk?'Игра для Пушкинской карты · 14–22 года · Москва':'Цифровой путеводитель · Москва · октябрь 2026'}</p>
+      ${cut('h1','Куда пойти, чтобы отозвалось')}
+      <p style="font-size:19px">Три хода, около минуты: погода вечера, узор, карта. Obraz прочитает их и проложит твой путь по выставкам, которые идут сейчас${S.pk?', и оставит только те, что можно оплатить Пушкинской картой':''}.</p>
+      <div class="row"><button id="start">${S.me?'Сыграть ещё раз':'Начать игру'}</button><button class="ghost" id="tog">Пойти вместе</button>${S.me?'<button class="ghost" id="mine">Мой путь</button>':''}</div>
+    </div>
+    <div class="art"><img id="heroart" width="520" height="650" alt="Узор из букв О, разрезанный розовыми штрихами мелка: приём с плаката Алёны"></div>
+  </section>
+  <section class="stack" style="gap:18px"><p class="lab">Как устроена игра</p>
+    <div class="three">
+      <div><span class="lab">Ход 1 · просто</span><b>Погода</b><span>Двигаешь точку по полю: тепло или холодно, легко или тяжело.</span><span class="mute small">Obraz берёт палитру и тон вечера.</span></div>
+      <div><span class="lab">Ход 2 · сложнее</span><b>Узор</b><span>Три раза выбираешь, чем продолжить узор: проще, так же или сложнее.</span><span class="mute small">Obraz берёт, сколько деталей хочется сегодня.</span></div>
+      <div><span class="lab">Ход 3 · образно</span><b>Карта</b><span>Тянешь карту к фразе «Сегодня я хочу…» и решаешь, знакомое или новое.</span><span class="mute small">Obraz берёт, зачем ты идёшь.</span></div>
+      <div><span class="lab">Результат</span><b>Путь</b><span>Например, «Снежный путь в тишину» и выставки по пути.</span><span class="mute small">У каждой видно, из какого хода она взялась.</span></div>
+    </div>
+    <div class="row"><button class="ghost" id="howb">Как это работает и на чём основано</button></div>
+  </section>
+  <section class="pkband"><div class="stack" style="gap:10px"><p class="lab" style="color:var(--pink)">Пушкинская карта · 14–22 года</p><h3>Те же три хода, но только выставки, которые можно оплатить картой</h3>
+    <p class="mute">Obraz покажет ${npk} выставок из ${EX.length}, а кнопка билета поведёт к оплате Пушкинской картой. Переключатель есть и в шапке на каждой странице.</p></div>
+    <button id="pkon" class="${S.pk?'ghost':''}">${S.pk?'Показать все выставки':'Включить Пушкинскую карту'}</button></section>
+  <div class="agg"><span><i></i>Афиша сейчас: ${EX.length} выставок</span><span>По Пушкинской карте: ${npk}</span><span>Яндекс Афиша · сайты музеев</span><span>обновлено 16 октября</span></div>${foot()}`;
+  heroArt().then(u=>{const im=document.getElementById('heroart');if(im)im.src=u});
+  document.getElementById('start').onclick=startGame;
+  document.getElementById('tog').onclick=()=>go('together');
+  document.getElementById('howb').onclick=()=>go('how');
+  document.getElementById('pkon').onclick=()=>{setPk(!S.pk);render()};
+  if(S.me)document.getElementById('mine').onclick=()=>go('path');
+}
+
+/* ---------- игра: три хода ---------- */
+const MOVES=['Погода','Узор','Карта'];
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+function startGame(){S.g={step:0,x:0,y:0,rd:0,pat:[null,null,null],ord:[0,1,2].map(()=>shuffle([0,1,2])),deck:shuffle([0,1,2,3,4]),dp:0,m:null,o:.5};go('play')}
+function turnHead(n,sub){return`<div class="turn"><span class="lab">Ход ${n} из 3 · ${MOVES[n-1]}${sub?' · '+sub:''}</span><span class="dots" aria-hidden="true">${[1,2,3].map(i=>`<i class="${i<=n?'on':''}"></i>`).join('')}</span></div>`}
+function play(){
+  if(!S.g){startGame();return}
+  [moveWeather,movePattern,moveCard,reveal][S.g.step]();
+}
+const got=t=>`<span class="lab">Obraz понял</span><span>${t}</span>`;
+
+function moveWeather(){
+  const G=S.g;
+  app.innerHTML=`<section class="game">${turnHead(1,'просто')}
+    <p class="q">Какая погода у твоего вечера?</p>
+    <div class="padwrap">
+      <div class="pad" id="pad" tabindex="0" role="group" aria-label="Поле погоды: слева холодно, справа тепло, сверху легко, снизу тяжело. Стрелки двигают точку.">
+        <canvas id="padc" width="400" height="400"></canvas><i class="h" id="ph"></i><i class="v" id="pv"></i><i class="m" id="pm"></i>
+        <span class="e l">холодно</span><span class="e r">тепло</span><span class="e t">легко</span><span class="e b">тяжело</span>
+      </div>
+      <div class="stack" style="gap:18px">
+        <p class="wx" id="wx" aria-live="polite"></p>
+        <p class="mute">Двигай точку, пока погода не станет твоей. Чем дальше от центра, тем сильнее этот ход влияет на подборку.</p>
+        <div class="got" id="got"></div>
+        <div class="row"><button class="ghost" id="back">Назад</button><button id="next">Дальше</button></div>
+      </div>
+    </div></section>`;
+  document.getElementById('padc').getContext('2d').drawImage(padCanvas(),0,0);
+  const pad=document.getElementById('pad'),ph=document.getElementById('ph'),pv=document.getElementById('pv'),pm=document.getElementById('pm');
+  const upd=()=>{const L=(G.x+1)/2*100+'%',T=(1-G.y)/2*100+'%';pv.style.left=L;pm.style.left=L;ph.style.top=T;pm.style.top=T;
+    document.getElementById('wx').textContent=wxAt(G.x,G.y).n;
+    const pt=palTxt(G.x,G.y);document.getElementById('got').innerHTML=got(`${cap(tempWord(G.x))}, ${weightWord(G.y)}. `+(pt?`Выше пойдут выставки с ${pt}.`:'Цвет и тон пока почти не влияют на подборку.'))};
+  upd();
+  const set=ev=>{const r=pad.getBoundingClientRect();G.x=cl((ev.clientX-r.left)/r.width*2-1,-1,1);G.y=cl(1-(ev.clientY-r.top)/r.height*2,-1,1);upd()};
+  pad.onpointerdown=ev=>{try{pad.setPointerCapture(ev.pointerId)}catch(e){}set(ev)};
+  pad.onpointermove=ev=>{if(ev.buttons||ev.pointerType==='touch')set(ev)};
+  pad.onkeydown=ev=>{const k={ArrowLeft:[-.1,0],ArrowRight:[.1,0],ArrowUp:[0,.1],ArrowDown:[0,-.1]}[ev.key];if(k){ev.preventDefault();G.x=cl(G.x+k[0],-1,1);G.y=cl(G.y+k[1],-1,1);upd()}};
+  document.getElementById('back').onclick=()=>go(S.invite?'join':'home');
+  document.getElementById('next').onclick=()=>{G.step=1;render();window.scrollTo({top:0})};
+}
+
+function patGot(G){
+  const v=G.pat.filter(x=>x!=null),c=avg(v),rd=G.rd,ch=G.pat[rd];
+  const now=ch==null?'':`Круг ${rd+1}: ${PAT_WORD[ch+1]}. `;
+  return got(now+(c<-.2?'Пока тянет к простому: выше пойдут залы, где мало элементов и много воздуха.':c>.2?'Пока тянет к насыщенному: выше пойдут плотные, многослойные экспозиции.':'Пока в равновесии: плотность выставки почти не влияет.'));
+}
+function movePattern(){
+  const G=S.g,rd=G.rd,{B}=PAT[rd],C=patColors(G.x),ch=G.pat[rd];
+  app.innerHTML=`<section class="game">${turnHead(2,`круг ${rd+1} из 3`)}
+    <p class="q">Чем продолжить узор?</p>
+    <div class="board"><canvas id="bd" width="480" height="480" role="img" aria-label="Узор из плиток с пустым углом справа внизу"></canvas>
+      <div class="stack" style="gap:18px"><p class="mute">Правильного ответа нет. Поставь в пустой угол кусок, который хочется видеть. С каждым кругом узор мельче и сложнее.</p>
+        <div class="opts">${G.ord[rd].map(v=>`<button class="opt ${ch===v-1?'sel':''}" data-v="${v}" aria-label="Кусок: ${PAT_WORD[v]}" aria-pressed="${ch===v-1}"><canvas width="240" height="240"></canvas></button>`).join('')}</div>
+        <div class="got" id="got">${ch==null?'':patGot(G)}</div>
+        <div class="row"><button class="ghost" id="back">Назад</button><button id="next" ${ch==null?'disabled':''}>${rd<2?'Следующий круг':'Дальше'}</button></div>
+      </div></div></section>`;
+  const bd=document.getElementById('bd');drawBoard(bd,rd,C,ch==null?null:cl(B+ch,0,4));
+  app.querySelectorAll('.opt').forEach(b=>{const v=+b.dataset.v;b.querySelector('canvas').getContext('2d').drawImage(pieceCanvas(rd,cl(B+v-1,0,4),C),0,0);
+    b.onclick=()=>{G.pat[rd]=v-1;drawBoard(bd,rd,C,cl(B+v-1,0,4));app.querySelectorAll('.opt').forEach(x=>{x.classList.toggle('sel',x===b);x.setAttribute('aria-pressed',String(x===b))});
+      document.getElementById('got').innerHTML=patGot(G);document.getElementById('next').disabled=false}});
+  document.getElementById('back').onclick=()=>{if(rd>0)G.rd--;else G.step=0;render()};
+  document.getElementById('next').onclick=()=>{if(rd<2)G.rd++;else G.step=2;render();window.scrollTo({top:0})};
+}
+
+function cardGot(G){const M=MOT[G.m];return got(`Карта «${M.card}»: мотив «${M.falk}» по Фалку. Выше пойдут выставки, ${M.eff}. ${cap(openWord(G.o))}.`)}
+function moveCard(){
+  const G=S.g,show=[0,1,2].map(i=>G.deck[(G.dp+i)%5]);
+  app.innerHTML=`<section class="game">${turnHead(3,'образно')}
+    <p class="phrase">Сегодня я хочу…</p>
+    <p class="mute">Выбери карту, которая продолжает фразу. Карта ничего не диагностирует: смысл в неё вкладываешь ты.</p>
+    <div class="cards">${show.map(k=>`<button class="card ${G.m===k?'sel':''} ${G.m!=null&&G.m!==k?'dim':''}" data-k="${k}" aria-pressed="${G.m===k}"><img data-k="${k}" width="360" height="540" alt="Карта «${MOT[k].card}»"><span>…${MOT[k].want}</span></button>`).join('')}</div>
+    <div class="row"><button class="ghost" id="more">Другие карты</button></div>
+    <div class="stack" id="open" ${G.m==null?'hidden':''}>
+      <p class="q" style="font-size:clamp(24px,3.4vw,36px)">Знакомое или неизведанное?</p>
+      <input type="range" class="slider" id="op" min="0" max="100" value="${Math.round(G.o*100)}" aria-label="Знакомое или неизведанное">
+      <div class="ends"><span>знакомые имена, классика</span><span>новые имена и форматы</span></div>
+    </div>
+    <div class="got" id="got">${G.m==null?'':cardGot(G)}</div>
+    <div class="row"><button class="ghost" id="back">Назад</button><button id="next" ${G.m==null?'disabled':''}>Показать мой путь</button></div></section>`;
+  FONTS_READY.then(()=>app.querySelectorAll('.card img').forEach(im=>im.src=cardURL(+im.dataset.k)));
+  app.querySelectorAll('.card').forEach(b=>b.onclick=()=>{G.m=+b.dataset.k;app.querySelectorAll('.card').forEach(x=>{x.classList.toggle('sel',x===b);x.classList.toggle('dim',x!==b);x.setAttribute('aria-pressed',String(x===b))});
+    document.getElementById('open').hidden=false;document.getElementById('next').disabled=false;document.getElementById('got').innerHTML=cardGot(G)});
+  document.getElementById('op').oninput=ev=>{G.o=ev.target.value/100;if(G.m!=null)document.getElementById('got').innerHTML=cardGot(G)};
+  document.getElementById('more').onclick=()=>{G.dp=(G.dp+3)%5;moveCard()};
+  document.getElementById('back').onclick=()=>{G.step=1;G.rd=2;render()};
+  document.getElementById('next').onclick=()=>{G.step=3;render()};
+}
+function finishGame(){
+  const G=S.g,q=v=>Math.round(v*10)/10;
+  S.me={x:q(G.x),y:q(G.y),pat:G.pat.slice(),m:G.m,o:Math.round(G.o*20)/20,pk:S.pk,ref:[null,null]};
+  Object.assign(S,{viewOnly:false,fromLink:false,showAll:false});
+}
+function reveal(){
+  finishGame();
+  app.innerHTML=`<section class="shuffle">${cutSpan('Читаю ходы')}</section>`;
+  setTimeout(()=>{if(S.screen!=='play')return;S.g=null;go(S.guests.length&&S.invite?'together':'path')},matchMedia('(prefers-reduced-motion: reduce)').matches?100:1200);
+}
+
+/* ---------- путь ---------- */
+function axesHTML(ms){
+  const ps=ms.map(prof),maxw=Math.max(...ps.flatMap(P=>P.w));
+  return`<div class="axes">${AX.map((a,k)=>`<div class="ax"><span>${a.lo}</span><div class="t">${ps.map((P,i)=>{const sz=6+P.w[k]/maxw*10;return`<b class="${ps.length>1?'o'+(i%4+1):''}" style="left:${(cl(P.p[k],-1,1)+1)/2*100}%;width:${sz}px;height:${sz}px"></b>`}).join('')}</div><span>${a.hi}</span></div>`).join('')}</div>`;
+}
+function reads(M){
+  return`<div class="reads">
+    <div><span class="lab">Погода</span><b>${esc(wxAt(M.x,M.y).n)}</b><span>${cap(tempWord(M.x))}, ${weightWord(M.y)}</span></div>
+    <div><span class="lab">Узор</span><b>${patBig(patC(M))}</b><span>${patWord(M)}</span></div>
+    <div><span class="lab">Карта</span><b>${MOT[M.m].card}</b><span>Сегодня хочется ${MOT[M.m].want}</span></div>
+    <div><span class="lab">Знакомое или новое</span><b>${openBig(M.o)}</b><span>${openPct(M.o)}</span></div>
+    ${M.ref&&M.ref.some(v=>v!=null)?`<div><span class="lab">Уточнение</span><b>Окна</b><span>${M.ref.filter(v=>v!=null).length} из 2, каждое сдвинуло вкус на 20%</span></div>`:''}
+  </div>`;
+}
+function path(){
+  if(!S.me){go('home');return}
+  const M=S.me,P=pathOf([M]);
+  app.innerHTML=`<section class="pathgrid">
+    <div class="stack"><img class="cardimg" id="pcard" width="1080" height="1620" alt="Карта пути: ${esc(P.n)}"><p class="mute small">Сохрани карту: нажми и удерживай или кликни правой кнопкой мыши.</p></div>
+    <div class="stack" style="gap:20px">
+      <p class="lab">Твой путь${S.fromLink?' · открыт по ссылке':''}${S.pk?' · Пушкинская карта':''}</p>
+      ${cut('h1',P.n)}
+      ${reads(M)}
+      <p style="font-size:18px">${effects(P)}</p>
+      <div class="row"><button id="go">Открыть остановки пути</button><button class="ghost" id="ref">${M.ref.some(v=>v!=null)?'Уточнить заново':'Уточнить по фрагментам'}</button></div>
+      <div class="row"><button class="ghost" id="tog">Пойти вместе</button><button class="ghost" id="lnkb">Ссылка на мой путь</button><button class="ghost" id="re">Сыграть ещё раз</button></div>
+      <div id="sharebox"></div>
+      <details><summary>Как Obraz это посчитал</summary>
+        <p class="mute small" style="margin-top:12px">Каждый ход даёт свои оси: погода — температуру и светлоту цвета, узор — плотность, движение и порядок. Совпадение выставки = exp(−0,2·Σ w(x−p)²), вес оси растёт, чем дальше ход от середины. К нему добавляются мотив карты и выбор «знакомое или новое».</p>${axesHTML([M])}
+        <button class="ghost" id="howp" style="margin-top:14px">Схема и источники</button></details>
+      <p class="mute small">Obraz ничего не хранит. Когда закроешь страницу, пути не останется. Вернуться к нему можно по карте или по ссылке.</p>
+    </div></section>${foot()}`;
+  document.getElementById('go').onclick=()=>go('stops');
+  document.getElementById('ref').onclick=()=>{S.me.ref=[null,null];go('refine',{refStep:0})};
+  document.getElementById('tog').onclick=()=>go('together');
+  document.getElementById('re').onclick=startGame;
+  document.getElementById('howp').onclick=()=>go('how');
+  document.getElementById('lnkb').onclick=()=>{const u=linkFor('r',[M]);document.getElementById('sharebox').innerHTML=shareBox(u,'Ссылка на мой путь');wireShare(u)};
+  drawPathCard([M],'pcard');
+}
+function refine(){
+  if(!S.me){go('home');return}
+  const n=S.refStep,W=WINDOWS[n];
+  app.innerHTML=`<section class="game"><div class="turn"><span class="lab">Уточнение · окно ${n+1} из 2 · необязательно</span></div>
+    <p class="q">${W.q}</p><p class="mute">За каждым окном фрагмент работы с выставки, которая идёт сейчас. Названий нет, выбирай глазами. Каждое окно сдвигает вкус к выбранному фрагменту на 20%.</p>
+    <div class="wins">${W.ids.map((id,j)=>`<button class="win" data-j="${j}"><span class="frag"><img src="${exImg(exById(id))}" alt="Фрагмент работы ${j+1}"></span><span>окно ${j+1}</span></button>`).join('')}</div>
+    <div class="row"><button class="ghost" id="back">Назад к пути</button><button class="ghost" id="skip">Пропустить окно</button></div></section>`;
+  const next=()=>{if(n<1){S.refStep=1;refine();window.scrollTo({top:0})}else{go('path');toast(S.me.ref.some(v=>v!=null)?'Путь уточнён':'Путь без изменений')}};
+  app.querySelectorAll('.win').forEach(b=>b.onclick=()=>{S.me.ref[n]=+b.dataset.j;next()});
+  document.getElementById('skip').onclick=next;
+  document.getElementById('back').onclick=()=>go('path');
+}
+// карта пути 2:3: кусок поля погоды вокруг точки, полоса узора, сбой, название пути
+function drawPathCard(ms,imgId){
+  FONTS_READY.then(()=>{
+    const W=1080,H=1620,c=OS.canvas(W,H),g=c.getContext('2d'),P=pathOf(ms),sd=seedOf(P.n+ms.map(encM).join());
+    g.fillStyle=INK;g.fillRect(0,0,W,H);
+    const AW=960,AH=860,art=OS.canvas(AW,AH),a=art.getContext('2d'),pc=padCanvas(),px=(P.x+1)/2*399,py=(1-P.y)/2*399,sw=150,sh=134;
+    a.imageSmoothingEnabled=false;a.drawImage(pc,cl(px-sw/2,0,400-sw),cl(py-sh/2,0,400-sh),sw,sh,0,0,AW,AH);
+    const C=patColors(P.x),L=cl(Math.round(2+2*P.c),0,4),s=80,rows=3,y0=AH-rows*s;
+    for(let i=0;i<rows;i++)for(let j=0;j<AW/s;j++)drawTile(a,kohsCode(L,i,j,sd%997),j*s,y0+i*s,s,C,rng(sd+i*13+j));
+    const cc=cardCanvas(P.m);a.save();a.translate(AW-300,70);a.rotate(.05);a.drawImage(cc,0,0,240,360);a.restore();
+    OS.slices(a,{n:22,max:40,prob:.45,seed:sd%9973});OS.rgbSplit(a,{dx:4});
+    g.drawImage(art,60,170);
+    g.fillStyle=FG;g.font='300 24px Unbounded, sans-serif';spaced(g,4);g.fillText('OBRAZ · '+(ms.length>1?'ОБЩИЙ ПУТЬ':'ТВОЙ ПУТЬ'),60,112);
+    g.textAlign='right';g.fillText('МОСКВА · 2026',W-60,112);g.textAlign='left';spaced(g,0);
+    // название: узкий гротеск прописными, срез и разведение каналов
+    const tc=OS.canvas(W,330),tg=tc.getContext('2d'),words=P.n.toUpperCase().split(' '),lines=[words.slice(0,2).join(' '),words.slice(2).join(' ')];
+    const fs=Math.min(...lines.map(l=>fitFont(tg,l,700,'Oswald, sans-serif',W-120,150,60)));
+    tg.font=`700 ${fs}px Oswald, sans-serif`;tg.fillStyle=FG;lines.forEach((l,i)=>tg.fillText(l,60,fs*.95+i*fs*.98));
+    OS.slices(tg,{n:6,max:10,prob:.35,seed:sd%977});OS.rgbSplit(tg,{dx:4});
+    g.drawImage(tc,0,1060);
+    g.fillStyle=MUTE;g.font='300 22px Unbounded, sans-serif';spaced(g,3);
+    const info=ms.length>1?[ms.map((M,i)=>(M.name||who(M,i))).join(' + ').toUpperCase().slice(0,44),'ПОГОДА '+P.W.n.toUpperCase()+' · УЗОР '+patBig(P.c).toUpperCase()]:
+      ['ПОГОДА '+P.W.n.toUpperCase()+' · УЗОР '+patBig(P.c).toUpperCase(),'КАРТА '+MOT[P.m].card.toUpperCase()+' · '+openPct(P.o).toUpperCase()];
+    info.forEach((t,i)=>g.fillText(t,60,1440+i*40));
+    g.fillStyle=FG;g.fillRect(60,H-100,W-120,2);g.font='300 22px Unbounded, sans-serif';g.fillText('ПУТЕВОДИТЕЛЬ ПО ВЫСТАВКАМ',60,H-52);spaced(g,0);
+    const img=document.getElementById(imgId);if(img)img.src=c.toDataURL('image/jpeg',.9);
+  });
+}
+
+/* ---------- остановки ---------- */
+function stopRow(o,i,ms){
+  const e=o.e,L=whyLines(e,ms),many=ms.length>1;
+  const pct=many?o.prs.map((v,j)=>`${esc(who(ms[j],j))} ${Math.round(v*100)}%`).join(' · '):`совпадение ${Math.round(o.pr*100)}%`;
+  return`<article class="stop"><span class="n">${String(i+1).padStart(2,'0')}</span>
+    <button class="thumb" data-id="${e.id}" aria-label="Открыть: ${esc(e.t)}">${frag(e)}</button>
+    <div class="tx"><span class="lab">${esc(e.v)} · ${esc(e.d)}${o.nov?' · новая':''}</span><h3><button data-id="${e.id}">${esc(e.t)}</button></h3>
+      <span class="pct">${pct}</span>
+      <div class="whys">${(L.length?L:[{k:'По сумме ходов',ch:'',res:'близко по цвету и форме'}]).map(l=>`<span><b>${l.k}${l.ch?' '+esc(l.ch):''}</b>${esc(l.res)}</span>`).join('')}</div>
+      ${PK[e.id]?`<div class="row"><span class="pk"><i></i>Пушкинская карта · ${esc(e.p)}</span>${S.pk?`<a class="btn" href="${afisha(e)}" target="_blank" rel="noopener">Купить по Пушкинской карте&nbsp;↗</a>`:''}</div>`:''}
+    </div></article>`;
+}
+function wireStops(){app.querySelectorAll('[data-id]').forEach(b=>b.onclick=()=>go('ex',{ex:b.dataset.id,date:0,qty:1}))}
+function segPk(){return`<div class="seg" role="group" aria-label="Какие выставки показывать"><button data-pk="0" class="${S.pk?'':'sel'}" aria-pressed="${!S.pk}">Все · ${EX.length}</button><button data-pk="1" class="${S.pk?'sel':''}" aria-pressed="${S.pk}">Пушкинская карта · ${npk}</button></div>`}
+function wireSeg(after){app.querySelectorAll('[data-pk]').forEach(b=>b.onclick=()=>{const v=b.dataset.pk==='1';if(v!==S.pk)setPk(v);after()})}
+function stops(){
+  if(!S.me){go('home');return}
+  const M=S.me,P=pathOf([M]),R=rank([M],S.pk),n=S.showAll?R.length:6;
+  app.innerHTML=`<section class="stack" style="gap:24px">
+    <div class="filters"><div class="stack" style="gap:10px"><p class="lab">${esc(P.n)}</p><h2>Остановки твоего пути</h2></div>${segPk()}</div>
+    <div class="agg"><span><i></i>Порядок: от самой близкой к твоему пути</span><span>${S.pk?'только Пушкинская карта':'все выставки афиши'}</span><span>обновлено 16 октября</span></div>
+    ${S.pk?pkNote(EX.length-npk):''}
+    <div class="stops">${R.slice(0,n).map((o,i)=>stopRow(o,i,[M])).join('')}</div>
+    <div class="row">${n<R.length?'<button class="ghost" id="more">Показать ещё остановки</button>':''}<button class="ghost" id="pth">Мой путь</button><button class="ghost" id="tog">Пойти вместе</button></div>
+  </section>${foot()}`;
+  wireStops();wireSeg(stops);
+  document.getElementById('tog').onclick=()=>go('together');
+  document.getElementById('pth').onclick=()=>go('path');
+  const m=document.getElementById('more');if(m)m.onclick=()=>{S.showAll=true;stops()};
+}
+
+/* ---------- вместе ---------- */
+const steps3=`<div class="three t3"><div><span class="lab">1</span><b>Ссылка другу</b><span class="mute small">или QR, до 5 человек</span></div><div><span class="lab">2</span><b>Каждый играет</b><span class="mute small">три хода на своём телефоне</span></div><div><span class="lab">3</span><b>Общий путь</b><span class="mute small">выставки, где совпало у всех, и приглашение на всех</span></div></div>`;
+function join(){
+  const g=S.guests,names=g.map((o,i)=>who(o,i));
+  const title=g.length===1?(g[0].name?`${g[0].name} зовёт тебя на выставку`:'Тебя зовут на выставку'):`${names.join(', ')} зовут тебя на выставку`;
+  app.innerHTML=`<section class="stack" style="max-width:760px;gap:18px">
+    <p class="lab">Вместе</p>${cut('h2',title)}
+    <p>Сыграй три хода: погода, узор, карта. Obraz сравнит ваши ходы прямо на твоём телефоне и проложит общий путь.</p>
+    <label class="lab" for="nm">Как тебя подписать на общей карте (можно пропустить)</label>
+    <input type="text" id="nm" maxlength="14" placeholder="Имя" value="${esc(S.myName)}">
+    <div class="row"><button id="start">Начать игру</button></div>
+    <p class="mute small">Obraz ничего не сохраняет. Ваши пути живут только в ссылке, которую вы отправите друг другу.</p>
+  </section>${foot()}`;
+  document.getElementById('nm').oninput=e=>S.myName=e.target.value;
+  document.getElementById('start').onclick=startGame;
+}
+function together(){
+  if(S.invite&&!S.me&&!S.viewOnly){go('join');return}
+  const G=group();
+  if(!G.length&&!S.me){
+    app.innerHTML=`<section class="stack" style="max-width:860px;gap:18px"><p class="lab">Вместе</p>${cut('h2','Пойти вдвоём или компанией')}
+      <p>На выставку чаще идут не одни. Каждый играет у себя, а Obraz находит выставки, где совпало у всех, и собирает приглашение на всех.</p>${steps3}
+      <div class="row"><button id="start">Сначала сыграть самому</button></div></section>${foot()}`;
+    document.getElementById('start').onclick=startGame;return;
+  }
+  if(!G.length){
+    app.innerHTML=`<section class="stack" style="max-width:860px;gap:18px"><p class="lab">Вместе</p>${cut('h2','Позови на выставку')}
+      <p>Друг откроет ссылку, сыграет те же три хода, и у него появится общий путь. Он сможет отправить его тебе обратно.</p>${steps3}
+      <label class="lab" for="nm">Как тебя подписать в приглашении (можно пропустить)</label>
+      <input type="text" id="nm" maxlength="14" placeholder="Имя" value="${esc(S.myName)}">
+      <div class="row"><button id="mk">Создать ссылку</button></div><div id="sharebox"></div></section>${foot()}`;
+    document.getElementById('nm').oninput=e=>S.myName=e.target.value;
+    document.getElementById('mk').onclick=()=>{const u=linkFor('t',[meP()]);document.getElementById('sharebox').innerHTML=shareBox(u,'Ссылка-приглашение');wireShare(u)};return;
+  }
+  const names=G.map(who),R=rank(G,S.pk),P=pathOf(G);
+  app.innerHTML=`<section class="stack" style="gap:22px">
+    <p class="lab">Вместе · ${G.length} ${G.length<5?'человека':'человек'}${S.pk?' · Пушкинская карта':''}</p>${cut('h2',P.n)}
+    <div class="pathgrid">
+      <div class="stack"><img class="cardimg" id="jcard" width="1080" height="1620" alt="Общая карта пути: ${esc(P.n)}"><p class="mute small">Сохрани карту: нажми и удерживай или кликни правой кнопкой мыши.</p></div>
+      <div class="stack" style="gap:16px">
+        <div class="reads">${G.map((M,i)=>`<div><span class="lab">${esc(names[i])}</span><b>${esc(pathOf([M]).n)}</b><span>${esc(wxAt(M.x,M.y).n.toLowerCase())}, узор ${patBig(patC(M)).toLowerCase()}, карта «${MOT[M.m].card}»</span></div>`).join('')}</div>
+        <p class="mute small">Выставки отсортированы по меньшему из совпадений, чтобы понравилось каждому.</p>
+        ${axesHTML(G.slice(0,4))}
+        ${S.viewOnly?`<div class="row"><button id="joinb">Сыграть и присоединиться</button></div>`:
+        `<div class="row"><button id="back">Отправить общий путь обратно</button>${G.length<MAXP?'<button class="ghost" id="add">Позвать ещё человека</button>':''}</div>`}
+        <div id="sharebox"></div>
+      </div></div>
+    <div class="filters"><h3>Общие остановки</h3>${segPk()}</div>
+    <div class="stops">${R.slice(0,6).map((o,i)=>stopRow(o,i,G)).join('')}</div>
+  </section>${foot()}`;
+  wireStops();wireSeg(together);
+  drawPathCard(G.map((M,i)=>Object.assign({},M,{name:names[i]})),'jcard');
+  const enc=G.map(o=>Object.assign({},o,{name:o.isMe?S.myName:o.name}));
+  if(S.viewOnly){const j=document.getElementById('joinb');if(S.guests.length>=MAXP){j.disabled=true;j.textContent='В компании уже 5 человек'}else j.onclick=()=>{S.viewOnly=false;S.invite=true;go('join')}}
+  else{document.getElementById('back').onclick=()=>{const u=linkFor('g',enc);document.getElementById('sharebox').innerHTML=shareBox(u,'Общий путь: отправь эту ссылку');wireShare(u)};
+    const add=document.getElementById('add');if(add)add.onclick=()=>{const u=linkFor('t',enc);document.getElementById('sharebox').innerHTML=shareBox(u,'Приглашение для следующего человека');wireShare(u)}}
+}
+
+/* ---------- выставка, билет, приглашение, аудиогид ---------- */
+function whyBlock(e,ms){
+  const L=whyLines(e,ms),prs=ms.map(M=>Math.round(score(e,M).s*100));
+  return`<div class="why"><p class="lab">Почему по ${ms.length>1?'вашему':'твоему'} пути · ${ms.length>1?prs.map((v,i)=>esc(who(ms[i],i))+' '+v+'%').join(' · '):prs[0]+'%'}</p>
+    <p style="font:italic 400 21px/1.3 var(--serif)">${esc(cap(e.feel))}.</p>
+    <div class="whys">${(L.length?L:[{k:'По сумме ходов',ch:'',res:'близко по цвету и форме'}]).map(l=>`<span><b>${l.k}${l.ch?' '+esc(l.ch):''}</b>${esc(l.res)}</span>`).join('')}</div></div>`;
+}
+function ex(){
+  const e=exById(S.ex),ms=people();
+  if(!e||!ms.length){go('home');return}
+  app.innerHTML=`<section class="ex">
+    <div class="stack">${frag(e)}<p class="mute small">Плейсхолдер. В проекте здесь кадрированное пресс-фото выставки, пропущенное через фильтр «${KIND[e.k]}».</p></div>
+    <div class="stack" style="gap:18px">
+      <button class="ghost" id="back" style="align-self:flex-start;padding:10px 14px">← К остановкам</button>
+      <p class="lab">${esc(e.v)} · ${esc(e.d)} · ${esc(e.p)}</p>
+      <h2>${esc(e.t)}</h2>
+      ${PK[e.id]?`<span class="pk"><i></i>Можно оплатить Пушкинской картой</span>`:''}
+      <p>${esc(e.about)}</p>
+      ${whyBlock(e,ms)}
+      <div class="row"><button id="tk">Выбрать билет</button><button class="ghost" id="gd">Аудиогид куратора</button></div>
+    </div></section>${foot()}`;
+  document.getElementById('back').onclick=()=>go(S.from==='together'?'together':'stops');
+  document.getElementById('tk').onclick=()=>go('ticket',{qty:Math.max(1,ms.length)});
+  document.getElementById('gd').onclick=()=>go('audio',{track:0});
+}
+const fmtDay=d=>d.toLocaleDateString('ru-RU',{weekday:'short',day:'numeric',month:'long'});
+const days=()=>[...Array(7)].map((_,i)=>{const d=new Date(TODAY);d.setDate(d.getDate()+i);return d});
+function ticket(){
+  const e=exById(S.ex),ds=days(),bought=S.bought[e.id],pk=PK[e.id];
+  const buy=pk&&S.pk?'Оплатить Пушкинской картой ↗':'Оплатить на Яндекс Афише ↗';
+  app.innerHTML=`<section class="stack" style="max-width:760px;gap:16px">
+    <button class="ghost" id="back" style="align-self:flex-start;padding:10px 14px">← К выставке</button>
+    <p class="lab">Билет · ${esc(e.p)}</p><h2>${esc(e.t)}</h2><p class="mute">${esc(e.v)}</p>
+    ${pk?`<span class="pk"><i></i>Можно оплатить Пушкинской картой</span>`:''}
+    <p class="lab" style="margin-top:8px">Когда идёте</p>
+    <div class="days" id="dates">${ds.map((d,i)=>`<button class="${i===S.date?'sel':''}" data-i="${i}">${fmtDay(d)}</button>`).join('')}</div>
+    <p class="lab" style="margin-top:8px">Сколько билетов</p>
+    <div class="qty"><button class="ghost" id="m" aria-label="Меньше">−</button><b id="q" style="min-width:2ch;text-align:center;font:700 24px var(--display)">${S.qty}</b><button class="ghost" id="p" aria-label="Больше">+</button></div>
+    <div class="row" style="margin-top:8px"><a class="btn" id="buy" href="${afisha(e)}" target="_blank" rel="noopener">${buy}</a></div>
+    ${pk&&S.pk?pkNote(0):''}
+    <p class="mute small">Оплата проходит на Яндекс Афише. Obraz получает комиссию с билета и не видит платёжных данных.</p>
+    <div class="reward" id="rw" ${bought?'':'hidden'}><p class="lab" style="color:var(--cyan)">Награда за поход</p><h3>Твоё приглашение готово к сборке</h3>
+      <p class="small">Генеративная система соберёт приглашение из фрагмента этой выставки, твоего пути и даты.${S.qty>1?' На всех, кто идёт.':''}</p>
+      <div class="row"><button id="gift">Собрать приглашение</button><button class="ghost" id="gd">Аудиогид</button></div></div>
+    <button class="ghost" id="demo" ${bought?'hidden':''} style="align-self:flex-start">Билет уже куплен · показать награду</button>
+  </section>${foot()}`;
+  const show=()=>{S.bought[e.id]={date:S.date,qty:S.qty};document.getElementById('rw').hidden=false;document.getElementById('demo').hidden=true};
+  app.querySelectorAll('#dates button').forEach(b=>b.onclick=()=>{S.date=+b.dataset.i;app.querySelectorAll('#dates button').forEach(x=>x.classList.toggle('sel',x===b))});
+  document.getElementById('m').onclick=()=>{S.qty=Math.max(1,S.qty-1);document.getElementById('q').textContent=S.qty};
+  document.getElementById('p').onclick=()=>{S.qty=Math.min(10,S.qty+1);document.getElementById('q').textContent=S.qty};
+  document.getElementById('buy').addEventListener('click',()=>setTimeout(show,400));
+  document.getElementById('demo').onclick=show;
+  document.getElementById('gift').onclick=()=>go('gift',{giftSeed:1});
+  document.getElementById('gd').onclick=()=>go('audio',{track:0});
+  document.getElementById('back').onclick=()=>go('ex');
+}
+function gift(){
+  const e=exById(S.ex),ms=people(),b=S.bought[e.id]||{date:S.date,qty:S.qty};
+  const defNames=ms.length>1?ms.map(M=>M.isMe?(S.myName||''):(M.name||'')).filter(Boolean).join(' + '):(S.myName||'');
+  if(S.giftNames==null)S.giftNames=defNames;
+  app.innerHTML=`<section class="gift">
+    <div class="stack"><img id="inv" alt="Персональное приглашение на выставку"><p class="mute small">Сохрани приглашение: нажми и удерживай или кликни правой кнопкой мыши.</p></div>
+    <div class="stack" style="gap:16px">
+      <button class="ghost" id="back" style="align-self:flex-start;padding:10px 14px">← К билету</button>
+      <p class="lab">Награда · персональное приглашение</p>${cut('h2','Приглашение на '+fmtDay(days()[b.date]))}
+      <p>Каждое приглашение собирается заново по приёмам плакатов: фрагмент выставки режется, проходит через 1 бит, кислоту или ночной сбой, цвет берётся из ${ms.length>1?'ваших путей':'твоего пути'}. Двух одинаковых не бывает.</p>
+      <label class="lab" for="gn">Для кого</label><input type="text" id="gn" maxlength="40" placeholder="${ms.length>1?'Алёна + Маша':'Твоё имя'}" value="${esc(S.giftNames)}">
+      <p class="lab">Формат</p><div class="seg"><button data-f="card" class="${S.giftFmt==='card'?'sel':''}">Открытка 4:5</button><button data-f="story" class="${S.giftFmt==='story'?'sel':''}">Сторис 9:16</button></div>
+      <div class="row"><button id="mix">Перемешать</button><button class="ghost" id="gd">Аудиогид</button></div>
+      <p class="mute small">Имя попадает только на картинку. Obraz его не сохраняет.</p>
+    </div></section>${foot()}`;
+  const draw=()=>drawInvite(e,ms,b,S.giftNames,S.giftFmt,S.giftSeed);draw();
+  let t;document.getElementById('gn').oninput=ev=>{S.giftNames=ev.target.value;clearTimeout(t);t=setTimeout(draw,300)};
+  app.querySelectorAll('.seg button').forEach(x=>x.onclick=()=>{S.giftFmt=x.dataset.f;app.querySelectorAll('.seg button').forEach(y=>y.classList.toggle('sel',y===x));draw()});
+  document.getElementById('mix').onclick=()=>{S.giftSeed++;draw()};
+  document.getElementById('back').onclick=()=>go('ticket');
+  document.getElementById('gd').onclick=()=>go('audio',{track:0});
+}
+function drawInvite(e,ms,b,names,fmt,seed){
+  FONTS_READY.then(()=>{
+    const W=1080,H=fmt==='story'?1920:1350,c=OS.canvas(W,H),g=c.getContext('2d'),v=(seed-1)%3,P=pathOf(ms),sd=seedOf(e.id)+seed*977,tint=tintOf(P.x);
+    g.fillStyle=INK;g.fillRect(0,0,W,H);
+    const AH=fmt==='story'?1000:560,art=OS.canvas(W,AH),a=art.getContext('2d'),base=fragBase(e.x,LOOK[e.id],seedOf(e.id)),k=Math.max(W,AH)/480;
+    a.drawImage(base,(W-480*k)/2,(AH-480*k)/2,480*k,480*k);
+    const nm=((names||'').trim()||(ms.length>1||b.qty>1?'Для вас':'Для тебя')).toUpperCase();
+    if(v===0){ // строгий 1 бит, имя повёрнуто на всю высоту
+      OS.slices(a,{n:26,max:60,prob:.45,seed:sd});OS.dither(a,{algo:'floyd',scale:3,light:tint});
+      OS.fitText(a,nm,{font:'"Oswald"',weight:700,x:W*.03,y:AH*.02,w:W*.26,h:AH*.96,rotate:-Math.PI/2,fill:FG});
+    }else if(v===1){ // кислота: порог и розовые штрихи мелком
+      OS.warp(a,{amp:8,freq:.02,noiseAmp:30,seed:sd});OS.duotone(a,{dark:INK,light:P.x>0?PINK:CYAN,threshold:avgLum(a)});
+      OS.scribble(a,{x:W*.12,y:AH*.95,len:AH*.8,angle:-1.05,legs:7,spacing:W*.09,width:W*.07,color:P.x>0?RED:PINK,seed:sd});
+    }else{ // ночной сбой
+      OS.gradientMap(a,NIGHT,{bands:6});OS.streaks(a,{count:120,maxLen:W*.4,alpha:.55,seed:sd});OS.slices(a,{n:30,max:16,prob:.4,seed:sd});OS.rgbSplit(a,{dx:5});OS.halftone(a,{cell:8,angle:45,mix:.35});
+    }
+    g.drawImage(art,0,0);
+    let y=AH+(fmt==='story'?110:80);
+    g.fillStyle=MUTE;g.font='300 24px Unbounded, sans-serif';spaced(g,4);g.fillText('OBRAZ · ПРИГЛАШЕНИЕ',60,y);g.textAlign='right';g.fillText('№ '+String(sd%10000).padStart(4,'0'),W-60,y);g.textAlign='left';spaced(g,0);
+    y+=30;
+    const tc=OS.canvas(W,190),tg=tc.getContext('2d');tg.fillStyle=FG;
+    if(v===2){const fs=fitFont(tg,nm,400,'Oranienbaum, serif',(W-120)/.78,170,60);tg.save();tg.translate(60,fs*.8);tg.scale(.78,1.15);tg.fillText(nm,0,0);tg.restore()}
+    else{const fs=fitFont(tg,nm,700,'Oswald, sans-serif',W-120,170,60);tg.fillText(nm,60,fs*.92)}
+    OS.slices(tg,{n:6,max:14,prob:.5,seed:sd%911});OS.rgbSplit(tg,{dx:4});g.drawImage(tc,0,y);
+    y+=230;g.fillStyle=FG;g.font='italic 400 40px "Playfair Display", serif';g.fillText('на выставку',60,y);
+    y+=62;g.font='600 44px "Golos Text", sans-serif';y=wrap(g,e.t,60,y,W-120,54);
+    y+=48;g.fillStyle=MUTE;g.font='500 28px "Golos Text", sans-serif';y=wrap(g,e.v,60,y,W-120,38);
+    y+=52;g.fillStyle=FG;g.font='300 26px Unbounded, sans-serif';spaced(g,3);g.fillText((fmtDay(days()[b.date])+(b.qty>1?' · '+b.qty+' билета':'')).toUpperCase(),60,y);
+    g.fillRect(60,H-100,W-120,2);g.fillText(P.n.toUpperCase(),60,H-52);spaced(g,0);
+    const el=document.getElementById('inv');if(el)el.src=c.toDataURL('image/jpeg',.9);
+  });
+}
+let utt=null,tick=null;
+function stopAudio(){try{speechSynthesis.cancel()}catch(e){}clearInterval(tick);utt=null}
+function tracks(e){return[{n:'Вступление',t:`Добро пожаловать на выставку «${e.t}». ${e.about} Я проведу вас по трём остановкам. Не торопитесь, на каждую хватит пары минут.`},...e.look.map((l,i)=>({n:`Остановка ${i+1}`,t:cap(l)+'.'}))]}
+function audio(){
+  const e=exById(S.ex),T=tracks(e),b=S.bought[e.id];
+  app.innerHTML=`<section class="ex">
+    <div>${frag(e)}</div>
+    <div class="stack" style="gap:16px">
+      <button class="ghost" id="back" style="align-self:flex-start;padding:10px 14px">← К выставке</button>
+      <p class="lab">Аудиогид куратора${b?' · билет на '+fmtDay(days()[b.date]):''}</p><h2>${esc(e.t)}</h2>
+      <div class="guide">${T.map((t,i)=>`<div class="trk ${i===S.track?'on':''}" data-i="${i}"><button class="ghost play" data-i="${i}" aria-label="Слушать: ${t.n}">▶</button>
+        <div><div class="nm">${t.n}</div><div class="prog"><i id="pg${i}"></i></div></div><span class="lab">${Math.max(1,Math.round(t.t.length/14))} c</span></div>`).join('')}
+        <p class="lyr" id="lyr">${esc(T[S.track].t)}</p></div>
+      <p class="mute small">В прототипе текст читает синтезатор речи браузера. В проекте здесь голос куратора или автора выставки.</p>
+    </div></section>${foot()}`;
+  const playT=i=>{
+    const was=utt&&S.track===i;stopAudio();app.querySelectorAll('.play').forEach(p=>p.textContent='▶');
+    S.track=i;app.querySelectorAll('.trk').forEach(t=>t.classList.toggle('on',+t.dataset.i===i));document.getElementById('lyr').textContent=T[i].t;if(was)return;
+    const btn=app.querySelector(`.play[data-i="${i}"]`);btn.textContent='❚❚';
+    const dur=T[i].t.length/14*1000,start=Date.now(),bar=document.getElementById('pg'+i);
+    tick=setInterval(()=>{const f=Math.min(1,(Date.now()-start)/dur);bar.style.width=f*100+'%';if(f>=1&&!('speechSynthesis' in window)){stopAudio();btn.textContent='▶'}},120);
+    try{utt=new SpeechSynthesisUtterance(T[i].t);utt.lang='ru-RU';const vv=speechSynthesis.getVoices().find(x=>/^ru/i.test(x.lang));if(vv)utt.voice=vv;
+      utt.onend=()=>{clearInterval(tick);bar.style.width='100%';btn.textContent='▶';utt=null;if(i<T.length-1)setTimeout(()=>playT(i+1),700)};speechSynthesis.speak(utt)}catch(err){utt={}}
+  };
+  app.querySelectorAll('.play').forEach(p=>p.onclick=()=>playT(+p.dataset.i));
+  document.getElementById('back').onclick=()=>go('ex');
+}
+
+/* ---------- как это работает ---------- */
+const FLOW=[
+ {t:'Погода',lvl:'просто',src:'Эмоции цвета',srcT:'Ou, Luo и др., 2004: шкалы «тёплый — холодный» и «лёгкий — тяжёлый» одинаково понимают люди из восьми стран, а нравится каждому своё. Круг эмоций Рассела: приятность и энергия.',
+  act:'Двигаешь точку по полю погоды: тепло или холодно, легко или тяжело.',get:'Палитра вечера (тёплая или холодная) и тон (светлый или тёмный). Чем дальше точка от центра, тем больше вес.',eff:'Выше выставки с похожей палитрой и светлотой.',
+  you:M=>`${wxAt(M.x,M.y).n}: ${tempWord(M.x)}, ${weightWord(M.y)}`},
+ {t:'Узор',lvl:'сложнее',src:'Сложность и интерес',srcT:'Берлайн, 1971: интерес к изображению зависит от его сложности. Güçlütürk и др., 2016: одни любят простое, другие сложное. Форма игры от кубиков Кооса, без их выводов об интеллекте.',
+  act:'Три раза выбираешь, чем продолжить узор: проще, так же или сложнее. С каждым кругом узор мельче.',get:'Тянет к простому и спокойному или к сложному и насыщенному. Если выбор каждый раз один и тот же, вес выше.',eff:'Минимализм и пустые залы или плотные, многослойные экспозиции.',
+  you:M=>patWord(M)},
+ {t:'Карта',lvl:'образно',src:'Метафорические карты и мотивы посетителя',srcT:'OH-карты (Раман, Эгетмайер): карта не диагностирует, смысл вкладывает человек. Фалк, 2009: пять мотивов похода в музей. IPOP (Smithsonian, 2014). Открытость опыту предсказывает вкус к искусству (BBC, 91 692 участника, 2009).',
+  act:'Тянешь карту к фразе «Сегодня я хочу…», потом выбираешь между знакомым и неизведанным.',get:'Мотив похода: узнать, выдохнуть, удивиться, рассмотреть или пойти с кем-то. Готовность к новому.',eff:'Тип выставки по мотиву и сколько новых имён и форматов добавить.',
+  you:M=>`«${MOT[M.m].card}»: ${MOT[M.m].falk}, ${openWord(M.o)}`}];
+const LIT=['Иттен И. Искусство цвета: тёплое и холодное, контраст.','Арнхейм Р. Искусство и визуальное восприятие: форма, равновесие, сложность.','Кандинский В. Точка и линия на плоскости.',
+ 'Berlyne D. Aesthetics and Psychobiology, 1971.','Ou L.-C., Luo M. R. и др. A study of colour emotion and colour preference, 2004.','Chamorro-Premuzic T. и др. Who art thou? Personality predictors of artistic preferences, 2009.',
+ 'Vessel E. и др. Stronger shared taste for natural aesthetic domains than for artifacts of human culture, 2018.','Güçlütürk Y. и др. Liking versus complexity, 2016.','Falk J. Identity and the Museum Visitor Experience, 2009.',
+ 'Pekarik A. и др. IPOP: A Theory of Experience Preference, 2014.','Schlotz W. и др. Aesthetic Responsiveness Assessment, 2021.','Rashid A. и др. Getting to know you: learning new user preferences in recommender systems, 2002.'];
+function how(){
+  const M=S.me,P=M?pathOf([M]):{W:WX[0],m:1,c:-.6,o:.3,n:'Снежный путь в тишину'};
+  app.innerHTML=`<section class="how">
+    <div class="stack" style="gap:20px"><p class="lab">Как это работает</p>${cut('h1','Три хода и путь')}
+      <p style="font-size:19px">Obraz не угадывает характер. Он берёт три признанные практики на стыке искусства и психологии, просит сделать по одному простому действию в каждой и показывает, что из этого следует для подборки.</p></div>
+    <div class="cols2">
+      <div class="stack"><p class="lab">Для кого</p><p>Для человека, который хочет искусства, но не знает, что ему понравится, и которому лень искать. По ВЦИОМ (декабрь 2025) искусством интересуются 75%, а 44% мешает нехватка времени. Неудачный поход стоит вечера, игра занимает минуту.</p></div>
+      <div class="stack"><p class="lab">Почему подбор под человека</p><p>Вкус к искусству самый личный: люди хорошо сходятся в оценке лиц и пейзажей и почти не сходятся в оценке искусства (Vessel и др., 2018). Поэтому общий топ выставок помогает мало.</p></div>
+    </div>
+    ${FLOW.map((f,i)=>`<div class="move"><h3>Ход ${i+1} · ${f.t}<small>${f.lvl}</small></h3>
+      <div class="flow">
+        <div><span class="lab">Практика</span><b>${f.src}</b><span class="small mute">${f.srcT}</span></div>
+        <div><span class="lab">Ты делаешь</span><span>${f.act}</span></div>
+        <div><span class="lab">Obraz извлекает</span><span>${f.get}</span></div>
+        <div><span class="lab">Что меняется в подборке</span><span>${f.eff}</span>${M?`<span class="you">У тебя: ${esc(f.you(M))}</span>`:''}</div>
+      </div></div>`).join('')}
+    <div class="move"><h3>Результат · Путь<small>${M?'твой':'пример'}</small></h3>
+      <div class="flow">
+        <div><span class="lab">Погода</span><b>Первое слово</b><span>${esc(P.W.adj)}</span></div>
+        <div><span class="lab">Карта</span><b>Куда ведёт</b><span>${esc(MOT[P.m].dest)}</span></div>
+        <div><span class="lab">Узор и знакомое</span><b>Каким путём</b><span>${patBig(P.c).toLowerCase()} · ${openWord(P.o)}</span></div>
+        <div><span class="lab">Путь</span><b>${esc(P.n)}</b><span>И выставки по пути. У каждой видно, из какого хода она взялась.</span></div>
+      </div></div>
+    <div class="stack" style="gap:14px"><p class="lab">Формула подбора</p>
+      <div class="formula">оценка = 0,6 · совпадение по цвету и узору + 0,25 · мотив + 0,15 · знакомое или новое<br>
+        совпадение = exp(−0,2 · Σ wₖ (xₖ − pₖ)²): x — оси выставки, p — оси из ходов (формула Алёны)<br>
+        вес оси wₖ = 0,3 + 1,2 · |значение хода|; у осей, которых не касался ни один ход, 0,15<br>
+        мотив = 1 для главного мотива выставки, 0,5 для второго, 0 для остальных<br>
+        знакомое или новое = 1 − |выбор − знакомость выставки|<br>
+        вместе: минимум по всем участникам − 0,25 за повтор площадки + 0,05 за выставку, открытую в последние три недели</div></div>
+    <div class="cols2">
+      <div class="stack"><p class="lab">Как размечены выставки</p><p>По тем же осям. Палитра, светлота и плотность считаются по пресс-фото автоматически. Мотив и знакомость отмечает куратор или искусствовед. В прототипе разметка сделана вручную для 14 выставок октября.</p></div>
+      <div class="stack"><p class="lab">Почему три хода</p><p>Человека хватает на три действия: простое, сложнее, образное, и сразу результат. В рекомендательных системах новых пользователей спрашивают мало, но с умом (Rashid и др., 2002). Окна с фрагментами работ остались необязательным уточнением после результата.</p></div>
+      <div class="stack"><p class="lab">Почему не тест Люшера</p><p>У него слабая повторяемость и нет связи с чертами личности, его приводят как пример эффекта Барнума. Obraz опирается на то, что подтверждается: цвет и форма вызывают предсказуемые ощущения, а вкус к ним у людей разный.</p></div>
+      <div class="stack"><p class="lab">Против эффекта Барнума</p><p>Объяснение у каждой выставки ссылается на ход человека: «Погода «снег»: прохладная палитра». Если связи нет, Obraz её не придумывает и пишет «по сумме ходов».</p></div>
+      <div class="stack"><p class="lab">Как проверить</p><p>Дать игру 10–20 людям вместе с короткой анкетой Aesthetic Responsiveness Assessment (14 вопросов) и спросить, совпала ли подборка с тем, куда им хотелось бы сходить.</p></div>
+      <div class="stack"><p class="lab">Что хранится</p><p>Ничего. Ходы считаются в браузере. Путь живёт только в карте, которую человек сохранил себе, или в ссылке, которую он сам отправил.</p></div>
+    </div>
+    <div class="stack" style="gap:14px"><p class="lab">Литература и источники</p><ol class="lit">${LIT.map(l=>`<li>${esc(l)}</li>`).join('')}</ol></div>
+    <div class="row">${M?'<button id="pthh">Мой путь</button>':'<button id="st">Сыграть</button>'}</div>
+  </section>${foot()}`;
+  const a=document.getElementById('pthh');if(a)a.onclick=()=>go('path');
+  const b=document.getElementById('st');if(b)b.onclick=startGame;
+}
+
+/* ======================= старт: разбираем ссылку ======================= */
+(function boot(){
+  const h=(location.hash||'').slice(1),kind=h.slice(0,2),toks=h.slice(2).split('.').filter(Boolean);
+  const ps=toks.map(decPerson).filter(Boolean).slice(0,MAXP);
+  if(kind==='r.'&&ps[0]){S.me=ps[0];delete S.me.name;S.fromLink=true;S.screen='path';setPk(S.me.pk,true)}
+  else if(kind==='t.'&&ps.length){S.guests=ps.slice(0,MAXP-1);S.invite=true;S.screen='join';setPk(ps.some(M=>M.pk),true)}
+  else if(kind==='g.'&&ps.length){S.guests=ps;S.viewOnly=true;S.screen='together';setPk(ps.some(M=>M.pk),true)}
+  else if(h==='how')S.screen='how';
+  else if(h==='pk')setPk(true,true);
+  render();
+})();
+</script>
