@@ -176,6 +176,15 @@ details summary{cursor:pointer;font:300 11px/1.3 var(--wide);letter-spacing:.14e
 .pk{font:300 10px/1.2 var(--wide);letter-spacing:.12em;text-transform:uppercase;color:var(--pink);display:inline-flex;align-items:center;gap:7px}
 .pk i{width:9px;height:9px;background:var(--pink);display:inline-block}
 .note{border:1px solid var(--pink);padding:16px 18px;display:flex;flex-direction:column;gap:6px}
+/* проверка для диплома */
+.tester{border:1px solid var(--pink);padding:24px;display:flex;flex-direction:column;gap:20px;max-width:860px;scroll-margin-top:96px}
+.tester fieldset{border:0;margin:0;padding:0;min-width:0}
+.tester legend{font:400 17px/1.4 var(--body);padding:0;margin-bottom:10px}
+.tester textarea{font:400 16px/1.45 var(--body);background:transparent;color:var(--fg);border:1px solid var(--mute);padding:10px 12px;width:100%;max-width:560px;resize:vertical;box-sizing:border-box}
+.tester textarea:focus{outline:none;border-color:var(--cyan)}
+.tester .warn{color:var(--pink)}
+.tlink{font:400 15px/1.4 var(--body);text-transform:none;letter-spacing:0;background:none;border:0;padding:0;color:var(--cyan);text-decoration:underline;text-underline-offset:3px}
+.tlink:hover{background:none;color:var(--fg)}
 .filters{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
 
 /* выставка, билет, приглашение, аудиогид */
@@ -275,6 +284,9 @@ const AX=[
  {k:'dyn',lo:'покой',hi:'движение',loP:'спокойствие',hiP:'движение'}];
 const D=AX.length, TODAY=new Date('2026-10-16'), MAXP=5;
 const ARTIFACT_URL='https://claude.ai/artifact/NipRnLExTue3C8t28o6yb6';
+// только на время тестирования диплома: ответы тестировщиков уходят в таблицу Алёны «Obraz ответы» (Google Apps Script)
+const SHEET_URL='https://script.google.com/macros/s/AKfycbyzh-NAu7w3nmUImpRrgqOVIYY6cQCd1PBtgNQEK8GaU4oYOABYbC-caZt-XtlOQCL0/exec';
+const SITE_URL='https://yakupovaalena97-netizen.github.io/obraz/v3/';
 // Выставки Москвы, октябрь 2026 (по Яндекс Афише и сайтам площадок). В проекте этот список собирает агрегатор афиш.
 const EX=[
  {id:'pastel',t:'Хрупкое искусство. Пастель из фондов графики XVIII — начала XX века',v:'Третьяковская галерея, Инженерный корпус',g:'tretyakov',d:'до 1 ноября',from:'2026-09-01',p:'от 500 ₽',x:[.4,-.5,.7,.7,-.2,.3,-.6],
@@ -1031,7 +1043,7 @@ const baseURL=()=>(/github\.io$/.test(location.hostname)||location.protocol==='f
 const linkFor=(kind,people)=>baseURL()+'#'+kind+'.'+people.map(encPerson).join('.');
 
 /* ======================= состояние (только в памяти) ======================= */
-let S={screen:'home',me:null,myName:'',guests:[],invite:false,viewOnly:false,fromLink:false,g:null,ex:null,date:0,qty:1,bought:{},track:0,from:'stops',giftFmt:'card',giftSeed:1,showAll:false,pk:false,refStep:0};
+let S={screen:'home',me:null,myName:'',guests:[],invite:false,viewOnly:false,fromLink:false,g:null,ex:null,date:0,qty:1,bought:{},track:0,from:'stops',giftFmt:'card',giftSeed:1,showAll:false,pk:false,refStep:0,ts:null};
 const app=document.getElementById('app');
 const NAV={home:'home',play:'play',path:'path',refine:'path',stops:'stops',ex:'stops',ticket:'stops',gift:'stops',audio:'stops',together:'together',join:'together',how:'how'};
 function go(screen,extra){stopAudio();if(screen==='ex'&&(S.screen==='stops'||S.screen==='together'))S.from=S.screen;Object.assign(S,{screen},extra||{});render();window.scrollTo({top:0})}
@@ -1198,7 +1210,7 @@ function moveCard(){
 function finishGame(){
   const G=S.g,q=v=>Math.round(v*10)/10;
   S.me={x:q(G.x),y:q(G.y),pat:G.pat.slice(),m:G.m,o:Math.round(G.o*20)/20,pk:S.pk,ref:[null,null]};
-  Object.assign(S,{viewOnly:false,fromLink:false,showAll:false});
+  Object.assign(S,{viewOnly:false,fromLink:false,showAll:false,ts:null});
 }
 function reveal(){
   finishGame();
@@ -1233,6 +1245,7 @@ function path(){
       <div class="row"><button id="go">Открыть остановки пути</button><button class="ghost" id="ref">${M.ref.some(v=>v!=null)?'Уточнить заново':'Уточнить по фрагментам'}</button></div>
       <div class="row"><button class="ghost" id="tog">Пойти вместе</button><button class="ghost" id="lnkb">Ссылка на мой путь</button><button class="ghost" id="re">Сыграть ещё раз</button></div>
       <div id="sharebox"></div>
+      ${S.fromLink?'':'<p><button class="tlink" id="tstp">Тестируешь прототип? Ответь на три вопроса</button></p>'}
       <details><summary>Как Obraz это посчитал</summary>
         <p class="mute small" style="margin-top:12px">Каждый ход даёт свои оси: погода — температуру и светлоту цвета, узор — плотность, движение и порядок. Совпадение выставки = exp(−0,2·Σ w(x−p)²), вес оси растёт, чем дальше ход от середины. К нему добавляются мотив карты и выбор «знакомое или новое».</p>${axesHTML([M])}
         <button class="ghost" id="howp" style="margin-top:14px">Схема и источники</button></details>
@@ -1244,6 +1257,7 @@ function path(){
   document.getElementById('re').onclick=startGame;
   document.getElementById('howp').onclick=()=>go('how');
   document.getElementById('lnkb').onclick=()=>{const u=linkFor('r',[M]);document.getElementById('sharebox').innerHTML=shareBox(u,'Ссылка на мой путь');wireShare(u)};
+  const tp=document.getElementById('tstp');if(tp)tp.onclick=()=>{go('stops');const t=document.getElementById('tester');if(t)t.scrollIntoView({behavior:'smooth'})};
   drawPathCard([M],'pcard');
 }
 function refine(){
@@ -1302,6 +1316,47 @@ function stopRow(o,i,ms){
 function wireStops(){app.querySelectorAll('[data-id]').forEach(b=>b.onclick=()=>go('ex',{ex:b.dataset.id,date:0,qty:1}))}
 function segPk(){return`<div class="seg" role="group" aria-label="Какие выставки показывать"><button data-pk="0" class="${S.pk?'':'sel'}" aria-pressed="${!S.pk}">Все · ${EX.length}</button><button data-pk="1" class="${S.pk?'sel':''}" aria-pressed="${S.pk}">Пушкинская карта · ${npk}</button></div>`}
 function wireSeg(after){app.querySelectorAll('[data-pk]').forEach(b=>b.onclick=()=>{const v=b.dataset.pk==='1';if(v!==S.pk)setPk(v);after()})}
+/* ---------- проверка для диплома: ответы тестировщиков ---------- */
+// только на время тестирования прототипа. Ответ уходит в таблицу Алёны, когда тестировщик сам нажмёт «Отправить»
+const TQ=[{k:'q1',q:'Путь похож на тебя?',a:['Да','Отчасти','Нет']},
+  {k:'q2',q:'Хочется сходить хотя бы на одну из первых трёх остановок?',a:['Да','Может быть','Нет']},
+  {k:'q3',q:'Было понятно, что делать в каждом ходе?',a:['Да','Не везде','Нет']}];
+const onSite=()=>baseURL()!==ARTIFACT_URL;
+function testBlock(){
+  if(S.fromLink||!S.me)return'';
+  const T=S.ts||(S.ts={q1:'',q2:'',q3:'',cm:'',st:''}),done=T.st==='sent';
+  return`<section class="tester" id="tester" aria-labelledby="tsth">
+    <div class="stack" style="gap:8px"><p class="lab" style="color:var(--pink)">Проверка для диплома</p><h3 id="tsth">Три вопроса после игры</h3>
+      <p class="small mute">Ответ уйдёт в таблицу Алёны вместе с ходами игры и первыми шестью остановками, только когда ты нажмёшь «Отправить». Имя и контакты не нужны. Это нужно только для проверки прототипа, сам Obraz ничего не собирает.</p></div>
+    ${TQ.map(t=>`<fieldset><legend>${t.q}</legend><div class="seg">${t.a.map(a=>`<button type="button" data-tq="${t.k}" data-a="${a}" class="${T[t.k]===a?'sel':''}" aria-pressed="${T[t.k]===a}"${done?' disabled':''}>${a}</button>`).join('')}</div></fieldset>`).join('')}
+    <div class="stack" style="gap:8px"><label class="lab" for="tcm">Что понравилось или мешало (можно пропустить)</label><textarea id="tcm" rows="3" maxlength="600"${done?' disabled':''}>${esc(T.cm)}</textarea></div>
+    <div class="row" style="align-items:center"><button id="tsend">Отправить ответ</button><span id="tst" class="small mute" role="status"></span></div>
+    ${onSite()?'':`<p class="small mute">Ответы принимает только сайт Obraz, отсюда они не уйдут. Открой игру по ссылке <a href="${SITE_URL}" target="_blank" rel="noopener">${SITE_URL.replace('https://','')}</a>.</p>`}
+  </section>`;
+}
+function testData(T){
+  const M=S.me,P=pathOf([M]),R=rank([M],S.pk).slice(0,6);
+  return{'версия':'v3','путь похож на тебя':T.q1,'хочется сходить на одну из первых трёх':T.q2,'понятно, что делать':T.q3,'комментарий':T.cm.trim(),
+    'путь':P.n,'погода':`${wxAt(M.x,M.y).n}: ${tempWord(M.x)}, ${weightWord(M.y)} (x ${M.x}, y ${M.y})`,'узор':patWord(M),'карта':MOT[M.m].card,
+    'знакомое или новое':openPct(M.o),'уточнение окнами':M.ref.filter(v=>v!=null).length,'только Пушкинская карта':S.pk?'да':'нет',
+    'остановки':R.map((o,i)=>`${i+1}. ${o.e.t} — ${Math.round(o.pr*100)}%`).join('; '),'ссылка на путь':linkFor('r',[M]),'экран':`${innerWidth}×${innerHeight}`};
+}
+// простой POST без чтения ответа: Google не отдаёт заголовки CORS, но скрипт таблицы срабатывает
+const sendTest=T=>fetch(SHEET_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(testData(T))});
+function wireTest(){
+  const T=S.ts;if(!T||!document.getElementById('tester'))return;
+  const upd=()=>{
+    const b=document.getElementById('tsend'),st=document.getElementById('tst');if(!b)return;
+    const ok=TQ.every(t=>T[t.k]);b.disabled=!ok||T.st==='sending'||T.st==='sent';b.textContent=T.st==='sent'?'Отправлено':'Отправить ответ';
+    st.textContent=T.st==='sent'?'Ответ отправлен. Спасибо!':T.st==='sending'?'Отправляю…':T.st==='fail'?(onSite()?'Не получилось отправить. Проверь интернет и нажми ещё раз.':'Отсюда ответ не уходит, открой игру на сайте.'):ok?'':'Ответь на три вопроса, комментарий по желанию';
+    st.className='small '+(T.st==='fail'?'warn':T.st==='sent'?'':'mute');
+    if(T.st==='sent')app.querySelectorAll('[data-tq],#tcm').forEach(x=>x.disabled=true);
+  };
+  app.querySelectorAll('[data-tq]').forEach(b=>b.onclick=()=>{T[b.dataset.tq]=b.dataset.a;app.querySelectorAll(`[data-tq="${b.dataset.tq}"]`).forEach(x=>{const on=x===b;x.classList.toggle('sel',on);x.setAttribute('aria-pressed',String(on))});if(T.st==='fail')T.st='';upd()});
+  document.getElementById('tcm').oninput=e=>{T.cm=e.target.value};
+  document.getElementById('tsend').onclick=()=>{T.st='sending';upd();sendTest(T).then(()=>{T.st='sent'},()=>{T.st='fail'}).then(upd)};
+  upd();
+}
 function stops(){
   if(!S.me){go('home');return}
   const M=S.me,P=pathOf([M]),R=rank([M],S.pk),n=S.showAll?R.length:6;
@@ -1311,8 +1366,9 @@ function stops(){
     ${S.pk?pkNote(EX.length-npk):''}
     <div class="stops">${R.slice(0,n).map((o,i)=>stopRow(o,i,[M])).join('')}</div>
     <div class="row">${n<R.length?'<button class="ghost" id="more">Показать ещё остановки</button>':''}<button class="ghost" id="pth">Мой путь</button><button class="ghost" id="tog">Пойти вместе</button></div>
+    ${testBlock()}
   </section>${foot()}`;
-  wireStops();wireSeg(stops);
+  wireStops();wireSeg(stops);wireTest();
   document.getElementById('tog').onclick=()=>go('together');
   document.getElementById('pth').onclick=()=>go('path');
   const m=document.getElementById('more');if(m)m.onclick=()=>{S.showAll=true;stops()};
